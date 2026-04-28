@@ -95,57 +95,25 @@ function numero(valor) {
   }).format(Number(valor) || 0);
 }
 
-function escapeHtml(valor) {
-  return String(valor ?? "")
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;")
-    .replaceAll("'", "&#039;");
-}
-
 function getColorProyecto(proyectoId) {
-  // Paleta pastel: mantiene colores por proyecto, pero con tonos más suaves
-  // para reducir fatiga visual en uso diario.
   const colores = {
-    "22_100": "#dbeafe", // azul pastel
-    "24_0010": "#dcfce7", // verde pastel
-    "24_015": "#ffedd5", // naranja suave
-    "24_077": "#f3e8ff", // violeta pastel
-    "25_008": "#fef9c3", // amarillo suave
-    "25_030": "#fee2e2", // rojo/rosa suave
-    "24_085": "#ccfbf1", // turquesa pastel
-    "24_117": "#e0e7ff", // índigo suave
-    "25_027": "#fce7f3", // rosa pastel
-    "25_039": "#ecfccb", // lima suave
-    "25_033": "#cffafe", // cian pastel
-    "25_041": "#ffe4e6", // coral suave
-    "25_034": "#d1fae5", // esmeralda pastel
-    VENTAS: "#e2e8f0", // gris azulado suave
+    "22_100": "#0ea5e9",
+    "24_0010": "#22c55e",
+    "24_015": "#f97316",
+    "24_077": "#a855f7",
+    "25_008": "#eab308",
+    "25_030": "#ef4444",
+    "24_085": "#14b8a6",
+    "24_117": "#6366f1",
+    "25_027": "#ec4899",
+    "25_039": "#84cc16",
+    "25_033": "#06b6d4",
+    "25_041": "#f43f5e",
+    "25_034": "#10b981",
+    VENTAS: "#64748b",
   };
 
-  return colores[proyectoId] || "#e5e7eb";
-}
-
-function getTextoColorProyecto(proyectoId) {
-  const coloresTexto = {
-    "22_100": "#1e3a8a",
-    "24_0010": "#166534",
-    "24_015": "#9a3412",
-    "24_077": "#6b21a8",
-    "25_008": "#854d0e",
-    "25_030": "#991b1b",
-    "24_085": "#115e59",
-    "24_117": "#3730a3",
-    "25_027": "#9d174d",
-    "25_039": "#3f6212",
-    "25_033": "#155e75",
-    "25_041": "#9f1239",
-    "25_034": "#065f46",
-    VENTAS: "#334155",
-  };
-
-  return coloresTexto[proyectoId] || "#374151";
+  return colores[proyectoId] || "#94a3b8";
 }
 
 function ProjectBadge({ proyectoId, proyecto }) {
@@ -156,15 +124,13 @@ function ProjectBadge({ proyectoId, proyecto }) {
         alignItems: "center",
         maxWidth: 320,
         background: getColorProyecto(proyectoId),
-        color: getTextoColorProyecto(proyectoId),
+        color: "white",
         padding: "5px 9px",
         borderRadius: 999,
         fontSize: 12,
-        fontWeight: 500,
-        letterSpacing: "0.1px",
-        lineHeight: 1.25,
-        border: "1px solid rgba(15, 23, 42, 0.08)",
-        boxShadow: "0 1px 4px rgba(15, 23, 42, 0.06)",
+        fontWeight: 700,
+        lineHeight: 1.2,
+        boxShadow: "0 2px 8px rgba(15, 23, 42, 0.16)",
       }}
       title={proyecto}
     >
@@ -241,6 +207,7 @@ function formatDate(fecha) {
 function normalizarRegistro(row, index) {
   return {
     id: index + 1,
+    idRegistro: row["ID_REGISTRO"] || row["idRegistro"] || "",
     fecha: row["FECHA"] || "",
     empleadoId: row["EMPLEADO ID"] || "",
     empleado: row["EMPLEADO"] || "",
@@ -385,18 +352,17 @@ export default function App() {
     const importe = km * PRECIO_KM;
 
     const nuevo = {
-  idRegistro: "km_" + Date.now(),
-  fecha: form.fecha,
-  empleadoId: form.empleadoId,
-  empleado: empleado?.nombre || "",
-  proyectoId: form.proyectoId,
-  proyecto: proyecto?.nombre || "",
-  destino: form.destino,
-  km,
-  observaciones: form.observaciones,
-  precioKm: PRECIO_KM,
-  importe,
-};
+      fecha: form.fecha,
+      empleadoId: form.empleadoId,
+      empleado: empleado?.nombre || "",
+      proyectoId: form.proyectoId,
+      proyecto: proyecto?.nombre || "",
+      destino: form.destino,
+      km,
+      observaciones: form.observaciones,
+      precioKm: PRECIO_KM,
+      importe,
+    };
 
     try {
       setGuardando(true);
@@ -432,6 +398,48 @@ export default function App() {
     }
   }
 
+  async function eliminarRegistro(idRegistro) {
+    if (!idRegistro) {
+      alert("Este registro no tiene ID_REGISTRO y no se puede eliminar.");
+      return;
+    }
+
+    const confirmar = window.confirm(
+      "¿Seguro que quieres eliminar este registro? Esta acción no se puede deshacer."
+    );
+
+    if (!confirmar) return;
+
+    try {
+      setMensaje("Eliminando registro...");
+
+      await fetch(API_URL, {
+        method: "POST",
+        mode: "no-cors",
+        headers: {
+          "Content-Type": "text/plain;charset=utf-8",
+        },
+        body: JSON.stringify({
+          action: "delete",
+          idRegistro,
+        }),
+      });
+
+      setRegistros((prev) =>
+        prev.filter((registro) => registro.idRegistro !== idRegistro)
+      );
+
+      setMensaje("Registro eliminado correctamente.");
+
+      setTimeout(() => {
+        cargarDatos();
+      }, 800);
+    } catch (error) {
+      console.error(error);
+      setMensaje("Error al eliminar el registro.");
+    }
+  }
+
   function cambiarFiltroHistorico(nombre, valor) {
     setFiltrosHistorico((prev) => ({ ...prev, [nombre]: valor }));
     setPaginaHistorico(1);
@@ -447,171 +455,6 @@ export default function App() {
     setPaginaHistorico(1);
   }
 
-
-  function getNombreMesSeleccionado() {
-    return meses.find((m) => m.value === mes)?.label || mes;
-  }
-
-  function imprimirInformeAsesoria() {
-    const nombreMes = getNombreMesSeleccionado();
-    const filas = informeAsesoria
-      .map(
-        (r) => `
-          <tr>
-            <td>${escapeHtml(r.empleado)}</td>
-            <td class="importe">${escapeHtml(euros(r.importe))}</td>
-          </tr>`
-      )
-      .join("");
-
-    const total = informeAsesoria.reduce(
-      (acc, r) => acc + Number(r.importe || 0),
-      0
-    );
-
-    const html = `
-      <!doctype html>
-      <html lang="es">
-        <head>
-          <meta charset="utf-8" />
-          <title>Informe asesoría - ${escapeHtml(nombreMes)} ${escapeHtml(anio)}</title>
-          <style>
-            * { box-sizing: border-box; }
-            body {
-              margin: 0;
-              padding: 32px;
-              font-family: Arial, sans-serif;
-              color: #0f172a;
-              background: #ffffff;
-            }
-            .documento {
-              max-width: 760px;
-              margin: 0 auto;
-            }
-            .encabezado {
-              border-bottom: 2px solid #0f172a;
-              padding-bottom: 16px;
-              margin-bottom: 24px;
-            }
-            h1 {
-              margin: 0;
-              font-size: 22px;
-              letter-spacing: 0.3px;
-            }
-            .subtitulo {
-              margin-top: 8px;
-              color: #475569;
-              font-size: 14px;
-            }
-            table {
-              width: 100%;
-              border-collapse: collapse;
-              margin-top: 18px;
-              font-size: 14px;
-            }
-            th {
-              text-align: left;
-              background: #f1f5f9;
-              border-bottom: 1px solid #cbd5e1;
-              padding: 11px 10px;
-              text-transform: uppercase;
-              font-size: 12px;
-              letter-spacing: 0.3px;
-            }
-            td {
-              border-bottom: 1px solid #e2e8f0;
-              padding: 11px 10px;
-            }
-            .importe {
-              text-align: right;
-              font-weight: 700;
-            }
-            .total td {
-              border-top: 2px solid #0f172a;
-              border-bottom: none;
-              font-weight: 800;
-              background: #f8fafc;
-            }
-            .nota {
-              margin-top: 18px;
-              font-size: 12px;
-              color: #64748b;
-            }
-            .acciones {
-              display: flex;
-              justify-content: flex-end;
-              gap: 10px;
-              margin-bottom: 20px;
-            }
-            button {
-              border: none;
-              border-radius: 10px;
-              padding: 10px 14px;
-              font-weight: 500;
-              cursor: pointer;
-              background: #d1fae5;
-              color: #065f46;
-              border: 1px solid #a7f3d0;
-            }
-            @media print {
-              body { padding: 0; }
-              .acciones { display: none; }
-              .documento { max-width: none; }
-            }
-          </style>
-        </head>
-        <body>
-          <div class="documento">
-            <div class="acciones">
-              <button onclick="window.print()">Imprimir / guardar como PDF</button>
-            </div>
-
-            <div class="encabezado">
-              <h1>FUNDACIÓN CANARIA IMAGINE 2050</h1>
-              <div class="subtitulo">Informe mensual para asesoría · ${escapeHtml(nombreMes)} ${escapeHtml(anio)}</div>
-            </div>
-
-            <table>
-              <thead>
-                <tr>
-                  <th>Empleado</th>
-                  <th style="text-align:right;">Importe</th>
-                </tr>
-              </thead>
-              <tbody>
-                ${filas || `<tr><td colspan="2">No hay empleados con importe mayor que 0 en este periodo.</td></tr>`}
-                <tr class="total">
-                  <td>Total</td>
-                  <td class="importe">${escapeHtml(euros(total))}</td>
-                </tr>
-              </tbody>
-            </table>
-
-            <div class="nota">Documento generado desde la app interna de control de kilometraje.</div>
-          </div>
-
-          <script>
-            window.onload = function () {
-              window.focus();
-              window.print();
-            };
-          </script>
-        </body>
-      </html>
-    `;
-
-    const ventana = window.open("", "_blank", "width=900,height=700");
-
-    if (!ventana) {
-      setMensaje("El navegador ha bloqueado la ventana de impresión. Permite ventanas emergentes para esta app.");
-      return;
-    }
-
-    ventana.document.open();
-    ventana.document.write(html);
-    ventana.document.close();
-  }
-
   const registrosMes = useMemo(() => {
     return registros.filter(
       (r) => getMonth(r.fecha) === mes && getYear(r.fecha) === anio
@@ -620,10 +463,6 @@ export default function App() {
 
   const totalesMes = useMemo(() => calcularTotales(registrosMes), [registrosMes]);
   const porEmpleadoMes = useMemo(() => agruparPorEmpleado(registrosMes), [registrosMes]);
-  const informeAsesoria = useMemo(
-    () => porEmpleadoMes.filter((r) => Number(r.importe || 0) > 0),
-    [porEmpleadoMes]
-  );
   const porProyectoMes = useMemo(() => agruparPorProyecto(registrosMes), [registrosMes]);
   const acumuladoPorProyecto = useMemo(() => agruparPorProyecto(registros), [registros]);
 
@@ -652,7 +491,8 @@ export default function App() {
       <div style={containerStyle}>
         <header style={headerStyle}>
           <div>
-            <h1 style={{ margin: "0", fontSize: 34, letterSpacing: -0.5 }}>
+            <div style={appBadgeStyle}>Gestión interna</div>
+            <h1 style={{ margin: "8px 0 0", fontSize: 34, letterSpacing: -0.5 }}>
               Control de Kilometraje
             </h1>
             <p style={{ color: "#64748b", marginTop: 6 }}>
@@ -808,18 +648,6 @@ export default function App() {
             <Box title="Informe mensual">
               <p>Total km: <strong>{numero(totalesMes.km)} km</strong></p>
               <p>Importe total: <strong>{euros(totalesMes.importe)}</strong></p>
-
-              <button
-                onClick={imprimirInformeAsesoria}
-                onMouseEnter={() => setHoveredButton("exportar-pdf-asesoria")}
-                onMouseLeave={() => setHoveredButton(null)}
-                style={{
-                  ...primaryButtonStyle("exportar-pdf-asesoria", hoveredButton),
-                  marginTop: 10,
-                }}
-              >
-                Exportar PDF Asesoría
-              </button>
             </Box>
 
             <Box title="Resumen por proyecto">
@@ -849,7 +677,7 @@ export default function App() {
             <Box title="Resumen para asesoría">
               <Table
                 headers={["Empleado", "Importe (€)"]}
-                rows={informeAsesoria.map((r) => [r.empleado, euros(r.importe)])}
+                rows={porEmpleadoMes.map((r) => [r.empleado, euros(r.importe)])}
               />
             </Box>
           </>
@@ -945,7 +773,7 @@ export default function App() {
             </p>
 
             <Table
-              headers={["Fecha", "Empleado", "Proyecto", "Destino", "Km", "Importe", "Observaciones"]}
+              headers={["Fecha", "Empleado", "Proyecto", "Destino", "Km", "Importe", "Observaciones", "Acciones"]}
               rows={registrosHistoricoPagina.map((r) => [
                 formatDate(r.fecha),
                 r.empleado,
@@ -954,6 +782,17 @@ export default function App() {
                 numero(r.km),
                 euros(r.importe),
                 r.observaciones || "",
+                <button
+                  key={`eliminar-${r.idRegistro || r.id}`}
+                  onClick={() => eliminarRegistro(r.idRegistro)}
+                  disabled={!r.idRegistro}
+                  onMouseEnter={() => setHoveredButton(`eliminar-${r.idRegistro || r.id}`)}
+                  onMouseLeave={() => setHoveredButton(null)}
+                  style={deleteButtonStyle(`eliminar-${r.idRegistro || r.id}`, hoveredButton, !r.idRegistro)}
+                  title={!r.idRegistro ? "Este registro no tiene ID_REGISTRO" : "Eliminar registro"}
+                >
+                  Eliminar
+                </button>,
               ])}
             />
 
@@ -1206,20 +1045,19 @@ function buttonStyle(active, id, hoveredButton) {
   const isHover = hoveredButton === id;
 
   return {
-    border: active ? "1px solid #cbd5e1" : "1px solid #e2e8f0",
+    border: "none",
     borderRadius: 14,
     padding: "10px 16px",
     background: active
-      ? "linear-gradient(135deg, #e2e8f0, #cbd5e1)"
-      : "linear-gradient(135deg, #ffffff, #f8fafc)",
-    color: "#1f2937",
-    fontWeight: active ? 600 : 500,
-    letterSpacing: "0.1px",
+      ? "linear-gradient(135deg, #1e293b, #0f172a)"
+      : "linear-gradient(135deg, #ffffff, #f1f5f9)",
+    color: active ? "white" : "#0f172a",
+    fontWeight: 700,
     cursor: "pointer",
     boxShadow: isHover
-      ? "0 6px 16px rgba(15, 23, 42, 0.12)"
-      : "0 2px 6px rgba(15, 23, 42, 0.06)",
-    transform: isHover ? "translateY(-1px)" : "translateY(0)",
+      ? "0 8px 22px rgba(15, 23, 42, 0.22)"
+      : "0 3px 8px rgba(15, 23, 42, 0.08)",
+    transform: isHover ? "translateY(-2px)" : "translateY(0)",
     transition: "all 0.2s ease",
     opacity: 1,
   };
@@ -1229,20 +1067,19 @@ function primaryButtonStyle(id, hoveredButton) {
   const isHover = hoveredButton === id;
 
   return {
-    border: "1px solid #bfdbfe",
+    border: "none",
     borderRadius: 14,
     padding: "13px 18px",
     background: isHover
-      ? "linear-gradient(135deg, #bfdbfe, #93c5fd)"
-      : "linear-gradient(135deg, #dbeafe, #bfdbfe)",
-    color: "#1e3a8a",
-    fontWeight: 500,
-    letterSpacing: "0.1px",
+      ? "linear-gradient(135deg, #1d4ed8, #1e40af)"
+      : "linear-gradient(135deg, #2563eb, #1d4ed8)",
+    color: "white",
+    fontWeight: 800,
     cursor: "pointer",
     boxShadow: isHover
-      ? "0 8px 18px rgba(37, 99, 235, 0.14)"
-      : "0 4px 12px rgba(37, 99, 235, 0.08)",
-    transform: isHover ? "translateY(-1px)" : "translateY(0)",
+      ? "0 10px 24px rgba(37, 99, 235, 0.42)"
+      : "0 6px 16px rgba(37, 99, 235, 0.32)",
+    transform: isHover ? "translateY(-2px)" : "translateY(0)",
     transition: "all 0.2s ease",
   };
 }
@@ -1257,15 +1094,39 @@ function secondaryButtonStyle(id, hoveredButton) {
     borderRadius: 12,
     border: "1px solid #cbd5e1",
     background: isHover
-      ? "linear-gradient(135deg, #f1f5f9, #e2e8f0)"
-      : "#ffffff",
+      ? "linear-gradient(135deg, #f8fafc, #e2e8f0)"
+      : "white",
     color: "#334155",
     cursor: "pointer",
+    fontWeight: 700,
+    boxShadow: isHover
+      ? "0 6px 16px rgba(15, 23, 42, 0.12)"
+      : "0 2px 6px rgba(15, 23, 42, 0.06)",
+    transform: isHover ? "translateY(-1px)" : "translateY(0)",
+    transition: "all 0.2s ease",
+  };
+}
+
+
+function deleteButtonStyle(id, hoveredButton, disabled = false) {
+  const isHover = hoveredButton === id && !disabled;
+
+  return {
+    padding: "7px 11px",
+    borderRadius: 10,
+    border: "1px solid rgba(127, 29, 29, 0.16)",
+    background: disabled
+      ? "#f1f5f9"
+      : isHover
+        ? "#fecaca"
+        : "#fee2e2",
+    color: disabled ? "#94a3b8" : "#7f1d1d",
+    cursor: disabled ? "not-allowed" : "pointer",
     fontWeight: 500,
     letterSpacing: "0.1px",
     boxShadow: isHover
-      ? "0 5px 14px rgba(15, 23, 42, 0.10)"
-      : "0 2px 6px rgba(15, 23, 42, 0.05)",
+      ? "0 6px 14px rgba(127, 29, 29, 0.12)"
+      : "0 2px 6px rgba(15, 23, 42, 0.04)",
     transform: isHover ? "translateY(-1px)" : "translateY(0)",
     transition: "all 0.2s ease",
   };
