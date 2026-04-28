@@ -406,6 +406,10 @@ export default function App() {
     observaciones: "",
   });
 
+  const empleadoSeleccionado = empleadosApp.find((e) => e.id === form.empleadoId);
+  const precioKmAplicado = empleadoSeleccionado ? empleadoSeleccionado.precioKm || PRECIO_KM : null;
+  const importeEstimado = precioKmAplicado !== null && form.km ? Number(form.km || 0) * precioKmAplicado : 0;
+
   useEffect(() => {
     cargarDatos();
   }, []);
@@ -981,6 +985,29 @@ export default function App() {
               <Field label="Km ida y vuelta">
                 <input type="number" name="km" value={form.km} onChange={handleChange} placeholder="Ej. 42" style={inputStyle} />
               </Field>
+
+              <div
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
+                  gap: 10,
+                  padding: "12px",
+                  background: "#F8FAFC",
+                  border: "1px solid #E2E8F0",
+                  borderRadius: 12,
+                }}
+              >
+                <div>
+                  <div style={{ fontSize: 12, color: "#64748B", marginBottom: 4 }}>Precio/KM aplicado</div>
+                  <strong style={{ color: "#334155", fontWeight: 500 }}>
+                    {precioKmAplicado !== null ? `${numero(precioKmAplicado)} €/km` : "Selecciona empleado"}
+                  </strong>
+                </div>
+                <div>
+                  <div style={{ fontSize: 12, color: "#64748B", marginBottom: 4 }}>Importe estimado</div>
+                  <strong style={{ color: "#334155", fontWeight: 500 }}>{euros(importeEstimado)}</strong>
+                </div>
+              </div>
 
               <Field label="Observaciones">
                 <textarea name="observaciones" value={form.observaciones} onChange={handleChange} placeholder="Opcional" style={{ ...inputStyle, minHeight: 90 }} />
