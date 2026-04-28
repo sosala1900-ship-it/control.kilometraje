@@ -238,6 +238,33 @@ function formatDate(fecha) {
   }
 }
 
+function fechaParaInput(fecha) {
+  if (!fecha) return "";
+
+  try {
+    const texto = String(fecha);
+
+    if (texto.includes("T")) {
+      const d = new Date(texto);
+      const year = d.getFullYear();
+      const month = String(d.getMonth() + 1).padStart(2, "0");
+      const day = String(d.getDate()).padStart(2, "0");
+      return `${year}-${month}-${day}`;
+    }
+
+    if (texto.includes("/")) {
+      const [day, month, year] = texto.split("/");
+      return `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+    }
+
+    if (texto.includes("-")) return texto.slice(0, 10);
+
+    return "";
+  } catch {
+    return "";
+  }
+}
+
 function normalizarRegistro(row, index) {
   return {
     id: index + 1,
@@ -323,6 +350,8 @@ export default function App() {
   const [cargando, setCargando] = useState(false);
   const [guardando, setGuardando] = useState(false);
   const [eliminandoId, setEliminandoId] = useState("");
+  const [registroEditando, setRegistroEditando] = useState(null);
+  const [actualizando, setActualizando] = useState(false);
   const [hoveredButton, setHoveredButton] = useState(null);
 
   const [mes, setMes] = useState(String(hoy.getMonth() + 1).padStart(2, "0"));
@@ -400,19 +429,50 @@ export default function App() {
     };
 
     try {
-      setGuardando(true);
-      setMensaje("Guardando en Google Sheets...");
+      if (registroEditando?.idRegistro) {
+        setActualizando(true);
+        setMensaje("Actualizando registro en Google Sheets...");
 
-      await fetch(API_URL, {
-        method: "POST",
-        mode: "no-cors",
-        headers: {
-          "Content-Type": "text/plain;charset=utf-8",
-        },
-        body: JSON.stringify(nuevo),
-      });
+        await fetch(API_URL, {
+          method: "POST",
+          mode: "no-cors",
+          headers: {
+            "Content-Type": "text/plain;charset=utf-8",
+          },
+          body: JSON.stringify({
+            action: "update",
+            idRegistro: registroEditando.idRegistro,
+            ...nuevo,
+          }),
+        });
 
-      setRegistros([{ id: Date.now(), ...nuevo }, ...registros]);
+        setRegistros((prev) =>
+          prev.map((r) =>
+            r.idRegistro === registroEditando.idRegistro
+              ? { ...r, ...nuevo, idRegistro: registroEditando.idRegistro }
+              : r
+          )
+        );
+
+        setRegistroEditando(null);
+        setMensaje("Registro actualizado correctamente.");
+        cargarDatos();
+      } else {
+        setGuardando(true);
+        setMensaje("Guardando en Google Sheets...");
+
+        await fetch(API_URL, {
+          method: "POST",
+          mode: "no-cors",
+          headers: {
+            "Content-Type": "text/plain;charset=utf-8",
+          },
+          body: JSON.stringify(nuevo),
+        });
+
+        setRegistros([{ id: Date.now(), ...nuevo }, ...registros]);
+        setMensaje("Registro guardado correctamente.");
+      }
 
       setForm({
         fecha: "",
@@ -424,13 +484,45 @@ export default function App() {
       });
 
       setTab("dashboard");
-      setMensaje("Registro guardado correctamente.");
     } catch (error) {
       console.error(error);
-      setMensaje("Error al guardar el registro.");
+      setMensaje(registroEditando ? "Error al actualizar el registro." : "Error al guardar el registro.");
     } finally {
       setGuardando(false);
+      setActualizando(false);
     }
+  }
+
+  function editarRegistro(registro) {
+    if (!registro.idRegistro) {
+      setMensaje("Este registro no tiene ID_REGISTRO y no se puede editar.");
+      return;
+    }
+
+    setRegistroEditando(registro);
+    setForm({
+      fecha: fechaParaInput(registro.fecha),
+      empleadoId: registro.empleadoId || "",
+      proyectoId: registro.proyectoId || "",
+      destino: registro.destino || "",
+      km: registro.km || "",
+      observaciones: registro.observaciones || "",
+    });
+    setTab("registro");
+    setMensaje("Editando registro. Modifica los datos y pulsa Actualizar kilometraje.");
+  }
+
+  function cancelarEdicion() {
+    setRegistroEditando(null);
+    setForm({
+      fecha: "",
+      empleadoId: "",
+      proyectoId: "",
+      destino: "",
+      km: "",
+      observaciones: "",
+    });
+    setMensaje("Edición cancelada.");
   }
 
   async function eliminarRegistro(idRegistro) {
@@ -788,7 +880,13 @@ export default function App() {
         )}
 
         {tab === "registro" && (
-          <Box title="Nuevo registro de kilometraje">
+          <Box title={registroEditando ? "Editar registro de kilometraje" : "Nuevo registro de kilometraje"}>
+            {registroEditando && (
+              <div style={editNoticeStyle}>
+                Estás editando un registro existente. Al actualizar, se modificará la fila correspondiente en Google Sheets.
+              </div>
+            )}
+
             <div style={{ display: "grid", gap: 12, maxWidth: 650 }}>
               <Field label="Fecha">
                 <input type="date" name="fecha" value={form.fecha} onChange={handleChange} style={inputStyle} />
@@ -830,15 +928,34 @@ export default function App() {
                 <textarea name="observaciones" value={form.observaciones} onChange={handleChange} placeholder="Opcional" style={{ ...inputStyle, minHeight: 90 }} />
               </Field>
 
-              <button
-                onClick={guardar}
-                disabled={guardando}
-                onMouseEnter={() => setHoveredButton("guardar")}
-                onMouseLeave={() => setHoveredButton(null)}
-                style={primaryButtonStyle("guardar", hoveredButton)}
-              >
-                {guardando ? "Guardando..." : "Guardar kilometraje"}
-              </button>
+              <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+                <button
+                  onClick={guardar}
+                  disabled={guardando || actualizando}
+                  onMouseEnter={() => setHoveredButton("guardar")}
+                  onMouseLeave={() => setHoveredButton(null)}
+                  style={primaryButtonStyle("guardar", hoveredButton)}
+                >
+                  {actualizando
+                    ? "Actualizando..."
+                    : guardando
+                    ? "Guardando..."
+                    : registroEditando
+                    ? "Actualizar kilometraje"
+                    : "Guardar kilometraje"}
+                </button>
+
+                {registroEditando && (
+                  <button
+                    onClick={cancelarEdicion}
+                    onMouseEnter={() => setHoveredButton("cancelar-edicion")}
+                    onMouseLeave={() => setHoveredButton(null)}
+                    style={secondaryButtonStyle("cancelar-edicion", hoveredButton)}
+                  >
+                    Cancelar edición
+                  </button>
+                )}
+              </div>
             </div>
           </Box>
         )}
@@ -994,21 +1111,37 @@ export default function App() {
                 numero(r.km),
                 euros(r.importe),
                 r.observaciones || "",
-                <button
-                  key={`eliminar-${r.idRegistro || r.id}`}
-                  onClick={() => eliminarRegistro(r.idRegistro)}
-                  disabled={eliminandoId === r.idRegistro || !r.idRegistro}
-                  onMouseEnter={() => setHoveredButton(`eliminar-${r.idRegistro || r.id}`)}
-                  onMouseLeave={() => setHoveredButton(null)}
-                  style={deleteButtonStyle(
-                    `eliminar-${r.idRegistro || r.id}`,
-                    hoveredButton,
-                    eliminandoId === r.idRegistro || !r.idRegistro
-                  )}
-                  title={!r.idRegistro ? "Este registro no tiene ID_REGISTRO" : "Eliminar registro"}
-                >
-                  {eliminandoId === r.idRegistro ? "Eliminando..." : "Eliminar"}
-                </button>,
+                <div key={`acciones-${r.idRegistro || r.id}`} style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                  <button
+                    onClick={() => editarRegistro(r)}
+                    disabled={!r.idRegistro}
+                    onMouseEnter={() => setHoveredButton(`editar-${r.idRegistro || r.id}`)}
+                    onMouseLeave={() => setHoveredButton(null)}
+                    style={editButtonStyle(
+                      `editar-${r.idRegistro || r.id}`,
+                      hoveredButton,
+                      !r.idRegistro
+                    )}
+                    title={!r.idRegistro ? "Este registro no tiene ID_REGISTRO" : "Editar registro"}
+                  >
+                    Editar
+                  </button>
+
+                  <button
+                    onClick={() => eliminarRegistro(r.idRegistro)}
+                    disabled={eliminandoId === r.idRegistro || !r.idRegistro}
+                    onMouseEnter={() => setHoveredButton(`eliminar-${r.idRegistro || r.id}`)}
+                    onMouseLeave={() => setHoveredButton(null)}
+                    style={deleteButtonStyle(
+                      `eliminar-${r.idRegistro || r.id}`,
+                      hoveredButton,
+                      eliminandoId === r.idRegistro || !r.idRegistro
+                    )}
+                    title={!r.idRegistro ? "Este registro no tiene ID_REGISTRO" : "Eliminar registro"}
+                  >
+                    {eliminandoId === r.idRegistro ? "Eliminando..." : "Eliminar"}
+                  </button>
+                </div>,
               ])}
             />
 
@@ -1232,6 +1365,16 @@ const messageStyle = {
   boxShadow: "0 4px 12px rgba(37, 99, 235, 0.08)",
 };
 
+const editNoticeStyle = {
+  background: "#eff6ff",
+  border: "1px solid #bfdbfe",
+  color: "#1e3a8a",
+  padding: 12,
+  borderRadius: 14,
+  marginBottom: 16,
+  fontSize: 14,
+};
+
 const paginationStyle = {
   display: "flex",
   justifyContent: "center",
@@ -1299,6 +1442,31 @@ function primaryButtonStyle(id, hoveredButton) {
       : "0 4px 12px rgba(37, 99, 235, 0.08)",
     transform: isHover ? "translateY(-1px)" : "translateY(0)",
     transition: "all 0.2s ease",
+  };
+}
+
+function editButtonStyle(id, hoveredButton, disabled = false) {
+  const isHover = hoveredButton === id && !disabled;
+
+  return {
+    border: "1px solid #bfdbfe",
+    borderRadius: 10,
+    padding: "7px 11px",
+    background: disabled
+      ? "#f8fafc"
+      : isHover
+      ? "linear-gradient(135deg, #dbeafe, #bfdbfe)"
+      : "#dbeafe",
+    color: disabled ? "#94a3b8" : "#1e3a8a",
+    cursor: disabled ? "not-allowed" : "pointer",
+    fontWeight: 500,
+    letterSpacing: "0.1px",
+    boxShadow: isHover
+      ? "0 6px 14px rgba(37, 99, 235, 0.12)"
+      : "0 2px 6px rgba(37, 99, 235, 0.06)",
+    transform: isHover ? "translateY(-1px)" : "translateY(0)",
+    transition: "all 0.2s ease",
+    opacity: disabled ? 0.65 : 1,
   };
 }
 
