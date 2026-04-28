@@ -512,7 +512,9 @@ export default function App() {
     setMensaje("Editando registro. Modifica los datos y pulsa Actualizar kilometraje.");
   }
 
-  function cancelarEdicion() {
+  function cancelarEdicion(e) {
+    if (e && typeof e.preventDefault === "function") e.preventDefault();
+
     setRegistroEditando(null);
     setForm({
       fecha: "",
@@ -522,8 +524,10 @@ export default function App() {
       km: "",
       observaciones: "",
     });
-    setTab("historico");
     setMensaje("Edición cancelada. Has vuelto al histórico.");
+    setPaginaHistorico(1);
+    setTab("historico");
+    window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
   async function eliminarRegistro(idRegistro) {
@@ -931,6 +935,7 @@ export default function App() {
 
               <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
                 <button
+                  type="button"
                   onClick={guardar}
                   disabled={guardando || actualizando}
                   onMouseEnter={() => setHoveredButton("guardar")}
@@ -948,6 +953,7 @@ export default function App() {
 
                 {registroEditando && (
                   <button
+                    type="button"
                     onClick={cancelarEdicion}
                     onMouseEnter={() => setHoveredButton("cancelar-edicion")}
                     onMouseLeave={() => setHoveredButton(null)}
