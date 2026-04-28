@@ -1,4 +1,4 @@
-// App.jsx — versión PRO con hover, colores por proyecto, histórico con filtros, paginación y eliminación
+// App.jsx — versión PRO con hover, colores por proyecto, histórico con filtros, paginación, eliminación y proyectos desde Sheet
 import { useEffect, useMemo, useState } from "react";
 
 const API_URL =
@@ -282,6 +282,23 @@ function normalizarRegistro(row, index) {
   };
 }
 
+function normalizarProyecto(row, index) {
+  const activoRaw = row["ACTIVO"];
+  const activoTexto = String(activoRaw ?? "").trim().toLowerCase();
+
+  return {
+    id: row["ID PROYECTO"] || row["PROYECTO ID"] || row["id"] || `proyecto_${index + 1}`,
+    nombre: row["NOMBRE PROYECTO"] || row["PROYECTO"] || row["nombre"] || "",
+    activo:
+      activoRaw === true ||
+      activoTexto === "true" ||
+      activoTexto === "sí" ||
+      activoTexto === "si" ||
+      activoTexto === "activo" ||
+      activoTexto === "1",
+  };
+}
+
 function calcularTotales(registros) {
   return registros.reduce(
     (acc, r) => {
@@ -346,6 +363,7 @@ export default function App() {
 
   const [tab, setTab] = useState("dashboard");
   const [registros, setRegistros] = useState([]);
+  const [proyectosDisponibles, setProyectosDisponibles] = useState(proyectos);
   const [mensaje, setMensaje] = useState("");
   const [cargando, setCargando] = useState(false);
   const [guardando, setGuardando] = useState(false);
@@ -386,11 +404,23 @@ export default function App() {
 
       const data = await cargarDatosJsonp();
 
-      const normalizados = data
+      const registrosRaw = Array.isArray(data) ? data : data.registros || [];
+      const proyectosRaw = Array.isArray(data) ? [] : data.proyectos || [];
+
+      const normalizados = registrosRaw
         .map((row, index) => normalizarRegistro(row, index))
         .filter((r) => r.fecha || r.empleado || r.proyecto || r.km);
 
+      const proyectosNormalizados = proyectosRaw
+        .map((row, index) => normalizarProyecto(row, index))
+        .filter((p) => p.id && p.nombre);
+
       setRegistros(normalizados.reverse());
+
+      if (proyectosNormalizados.length > 0) {
+        setProyectosDisponibles(proyectosNormalizados);
+      }
+
       setMensaje(`Datos cargados: ${normalizados.length} registros.`);
     } catch (error) {
       console.error(error);
@@ -411,7 +441,7 @@ export default function App() {
     }
 
     const empleado = empleados.find((e) => e.id === form.empleadoId);
-    const proyecto = proyectos.find((p) => p.id === form.proyectoId);
+    const proyecto = proyectosDisponibles.find((p) => p.id === form.proyectoId);
     const km = Number(form.km);
     const importe = km * PRECIO_KM;
 
@@ -911,7 +941,7 @@ export default function App() {
               <Field label="Proyecto">
                 <select name="proyectoId" value={form.proyectoId} onChange={handleChange} style={inputStyle}>
                   <option value="">Selecciona proyecto</option>
-                  {proyectos
+                  {proyectosDisponibles
                     .filter((p) => p.activo)
                     .map((p) => (
                       <option key={p.id} value={p.id}>
@@ -1086,7 +1116,7 @@ export default function App() {
                   style={inputStyle}
                 >
                   <option value="">Todos</option>
-                  {proyectos.map((p) => (
+                  {proyectosDisponibles.map((p) => (
                     <option key={p.id} value={p.id}>
                       {p.nombre}
                     </option>
@@ -1184,7 +1214,7 @@ export default function App() {
           <Box title="Proyectos">
             <Table
               headers={["ID", "Proyecto", "Activo"]}
-              rows={proyectos.map((p) => [
+              rows={proyectosDisponibles.map((p) => [
                 p.id,
                 <ProjectBadge key={p.id} proyectoId={p.id} proyecto={p.nombre} />,
                 p.activo ? "Sí" : "No",
