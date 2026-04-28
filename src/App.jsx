@@ -885,7 +885,7 @@ export default function App() {
           <Box title="Periodo de trabajo">
             <div style={gridFiltersStyle}>
               <Field label="Mes">
-                <select value={mes} onChange={(e) => setMes(e.target.value)} style={inputStyle}>
+                <select value={mes} onChange={(e) => setMes(e.target.value)} style={compactInputStyle}>
                   {meses.map((m) => (
                     <option key={m.value} value={m.value}>
                       {m.label}
@@ -895,7 +895,7 @@ export default function App() {
               </Field>
 
               <Field label="Año">
-                <select value={anio} onChange={(e) => setAnio(e.target.value)} style={inputStyle}>
+                <select value={anio} onChange={(e) => setAnio(e.target.value)} style={compactInputStyle}>
                   <option value="2026">2026</option>
                   <option value="2027">2027</option>
                   <option value="2028">2028</option>
@@ -949,13 +949,13 @@ export default function App() {
               </div>
             )}
 
-            <div style={{ display: "grid", gap: 12, maxWidth: 650 }}>
+            <div style={registroFormGridStyle}>
               <Field label="Fecha">
-                <input type="date" name="fecha" value={form.fecha} onChange={handleChange} style={inputStyle} />
+                <input type="date" name="fecha" value={form.fecha} onChange={handleChange} style={compactInputStyle} />
               </Field>
 
               <Field label="Empleado">
-                <select name="empleadoId" value={form.empleadoId} onChange={handleChange} style={inputStyle}>
+                <select name="empleadoId" value={form.empleadoId} onChange={handleChange} style={compactInputStyle}>
                   <option value="">Selecciona empleado</option>
                   {empleadosApp.map((e) => (
                     <option key={e.id} value={e.id}>
@@ -966,7 +966,7 @@ export default function App() {
               </Field>
 
               <Field label="Proyecto">
-                <select name="proyectoId" value={form.proyectoId} onChange={handleChange} style={inputStyle}>
+                <select name="proyectoId" value={form.proyectoId} onChange={handleChange} style={compactInputStyle}>
                   <option value="">Selecciona proyecto</option>
                   {proyectosApp
                     .filter((p) => esActivo(p.activo))
@@ -978,20 +978,21 @@ export default function App() {
                 </select>
               </Field>
 
-              <Field label="Destino">
-                <input name="destino" value={form.destino} onChange={handleChange} placeholder="Ej. Santa Cruz" style={inputStyle} />
+              <Field label="Destino" full>
+                <input name="destino" value={form.destino} onChange={handleChange} placeholder="Ej. Santa Cruz" style={compactInputStyle} />
               </Field>
 
               <Field label="Km ida y vuelta">
-                <input type="number" name="km" value={form.km} onChange={handleChange} placeholder="Ej. 42" style={inputStyle} />
+                <input type="number" name="km" value={form.km} onChange={handleChange} placeholder="Ej. 42" style={compactInputStyle} />
               </Field>
 
               <div
                 style={{
+                  gridColumn: "1 / -1",
                   display: "grid",
                   gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
                   gap: 10,
-                  padding: "12px",
+                  padding: "10px 12px",
                   background: "#F8FAFC",
                   border: "1px solid #E2E8F0",
                   borderRadius: 12,
@@ -1009,11 +1010,11 @@ export default function App() {
                 </div>
               </div>
 
-              <Field label="Observaciones">
-                <textarea name="observaciones" value={form.observaciones} onChange={handleChange} placeholder="Opcional" style={{ ...inputStyle, minHeight: 90 }} />
+              <Field label="Observaciones" full>
+                <textarea name="observaciones" value={form.observaciones} onChange={handleChange} placeholder="Opcional" style={{ ...compactInputStyle, minHeight: 76, resize: "vertical" }} />
               </Field>
 
-              <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+              <div style={{ gridColumn: "1 / -1", display: "flex", gap: 10, flexWrap: "wrap" }}>
                 <button
                   type="button"
                   onClick={guardar}
@@ -1120,7 +1121,7 @@ export default function App() {
                 <select
                   value={filtrosHistorico.mes}
                   onChange={(e) => cambiarFiltroHistorico("mes", e.target.value)}
-                  style={inputStyle}
+                  style={compactInputStyle}
                 >
                   <option value="">Todos</option>
                   {meses.map((m) => (
@@ -1135,7 +1136,7 @@ export default function App() {
                 <select
                   value={filtrosHistorico.anio}
                   onChange={(e) => cambiarFiltroHistorico("anio", e.target.value)}
-                  style={inputStyle}
+                  style={compactInputStyle}
                 >
                   <option value="">Todos</option>
                   <option value="2026">2026</option>
@@ -1148,7 +1149,7 @@ export default function App() {
                 <select
                   value={filtrosHistorico.empleadoId}
                   onChange={(e) => cambiarFiltroHistorico("empleadoId", e.target.value)}
-                  style={inputStyle}
+                  style={compactInputStyle}
                 >
                   <option value="">Todos</option>
                   {empleadosApp.map((e) => (
@@ -1163,7 +1164,7 @@ export default function App() {
                 <select
                   value={filtrosHistorico.proyectoId}
                   onChange={(e) => cambiarFiltroHistorico("proyectoId", e.target.value)}
-                  style={inputStyle}
+                  style={compactInputStyle}
                 >
                   <option value="">Todos</option>
                   {proyectosApp.map((p) => (
@@ -1304,10 +1305,10 @@ function Box({ title, children }) {
   );
 }
 
-function Field({ label, children }) {
+function Field({ label, children, full = false }) {
   return (
-    <label style={{ display: "grid", gap: 6 }}>
-      <span style={{ fontSize: 14, fontWeight: 700, color: "#334155" }}>
+    <label style={{ display: "grid", gap: 5, gridColumn: full ? "1 / -1" : "auto" }}>
+      <span style={{ fontSize: 13, fontWeight: 600, color: "#334155" }}>
         {label}
       </span>
       {children}
@@ -1400,6 +1401,15 @@ const gridFiltersStyle = {
   marginBottom: 16,
 };
 
+const registroFormGridStyle = {
+  display: "grid",
+  gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))",
+  gap: 12,
+  maxWidth: 820,
+  margin: "0 auto",
+  alignItems: "start",
+};
+
 const cardsGridStyle = {
   display: "grid",
   gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
@@ -1440,6 +1450,13 @@ const inputStyle = {
   fontSize: 14,
   background: "white",
   outline: "none",
+};
+
+const compactInputStyle = {
+  ...inputStyle,
+  minHeight: 42,
+  padding: "9px 12px",
+  borderRadius: 11,
 };
 
 const messageStyle = {
