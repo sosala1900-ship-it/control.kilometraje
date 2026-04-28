@@ -1,4 +1,4 @@
-// App.jsx — versión PRO con hover, colores por proyecto, histórico con filtros, paginación, eliminación y proyectos desde Sheet
+// App.jsx — versión PRO con hover, colores por proyecto, histórico con filtros, paginación y eliminación
 import { useEffect, useMemo, useState } from "react";
 
 const API_URL =
@@ -20,15 +20,6 @@ const meses = [
   { value: "10", label: "Octubre" },
   { value: "11", label: "Noviembre" },
   { value: "12", label: "Diciembre" },
-];
-
-const empleados = [
-  { id: "emp-001", nombre: "TANIA GUTIÉRREZ", activo: true },
-  { id: "emp-002", nombre: "ADALIS PERERA", activo: true },
-  { id: "emp-003", nombre: "MIKEL FERRERA", activo: true },
-  { id: "emp-004", nombre: "SARA RODRIGUEZ", activo: true },
-  { id: "emp-005", nombre: "PABLO MENDOZA", activo: true },
-  { id: "emp-006", nombre: "PAMELA GOGLIO", activo: true },
 ];
 
 const proyectos = [
@@ -282,20 +273,34 @@ function normalizarRegistro(row, index) {
   };
 }
 
-function normalizarProyecto(row, index) {
-  const activoRaw = row["ACTIVO"];
-  const activoTexto = String(activoRaw ?? "").trim().toLowerCase();
+
+function normalizarProyecto(row) {
+  const activo = String(row["ACTIVO"] ?? "").trim().toLowerCase();
 
   return {
-    id: row["ID PROYECTO"] || row["PROYECTO ID"] || row["id"] || `proyecto_${index + 1}`,
+    id: row["ID PROYECTO"] || row["PROYECTO ID"] || row["id"] || "",
     nombre: row["NOMBRE PROYECTO"] || row["PROYECTO"] || row["nombre"] || "",
-    activo:
-      activoRaw === true ||
-      activoTexto === "true" ||
-      activoTexto === "sí" ||
-      activoTexto === "si" ||
-      activoTexto === "activo" ||
-      activoTexto === "1",
+    activo: activo === "" || activo === "sí" || activo === "si" || activo === "true" || activo === "activo" || activo === "1",
+  };
+}
+
+function parseNumero(valor, fallback = 0) {
+  if (valor === null || valor === undefined || valor === "") return fallback;
+  const limpio = String(valor).replace("€", "").replace(",", ".").trim();
+  const numero = Number(limpio);
+  return Number.isFinite(numero) ? numero : fallback;
+}
+
+function normalizarEmpleado(row) {
+  const activo = String(row["ACTIVO"] ?? "").trim().toLowerCase();
+
+  return {
+    id: row["ID"] || row["EMPLEADO ID"] || row["id"] || "",
+    nombre: row["NOMBRE"] || row["EMPLEADO"] || row["nombre"] || "",
+    email: row["EMAIL"] || "",
+    rol: row["ROL"] || "",
+    precioKm: parseNumero(row["€/KM"], PRECIO_KM),
+    activo: activo === "sí" || activo === "si" || activo === "true" || activo === "activo" || activo === "1",
   };
 }
 
@@ -363,7 +368,8 @@ export default function App() {
 
   const [tab, setTab] = useState("dashboard");
   const [registros, setRegistros] = useState([]);
-  const [proyectosDisponibles, setProyectosDisponibles] = useState(proyectos);
+  const [proyectosApp, setProyectosApp] = useState(proyectos);
+  const [empleadosApp, setEmpleadosApp] = useState([]);
   const [mensaje, setMensaje] = useState("");
   const [cargando, setCargando] = useState(false);
   const [guardando, setGuardando] = useState(false);
@@ -403,24 +409,33 @@ export default function App() {
       setMensaje("Cargando datos del Sheet...");
 
       const data = await cargarDatosJsonp();
+      const registrosSheet = Array.isArray(data) ? data : data?.registros || [];
+      const proyectosSheet = Array.isArray(data?.proyectos) ? data.proyectos : [];
+      const empleadosSheet = Array.isArray(data?.empleados) ? data.empleados : [];
 
-      const registrosRaw = Array.isArray(data) ? data : data.registros || [];
-      const proyectosRaw = Array.isArray(data) ? [] : data.proyectos || [];
-
-      const normalizados = registrosRaw
+      const normalizados = registrosSheet
         .map((row, index) => normalizarRegistro(row, index))
         .filter((r) => r.fecha || r.empleado || r.proyecto || r.km);
 
-      const proyectosNormalizados = proyectosRaw
-        .map((row, index) => normalizarProyecto(row, index))
-        .filter((p) => p.id && p.nombre);
+      if (proyectosSheet.length > 0) {
+        const proyectosNormalizados = proyectosSheet
+          .map(normalizarProyecto)
+          .filter((p) => p.id && p.nombre);
 
-      setRegistros(normalizados.reverse());
-
-      if (proyectosNormalizados.length > 0) {
-        setProyectosDisponibles(proyectosNormalizados);
+        if (proyectosNormalizados.length > 0) {
+          setProyectosApp(proyectosNormalizados);
+        }
       }
 
+      if (empleadosSheet.length > 0) {
+        const empleadosNormalizados = empleadosSheet
+          .map(normalizarEmpleado)
+          .filter((e) => e.id && e.nombre && e.activo);
+
+        setEmpleadosApp(empleadosNormalizados);
+      }
+
+      setRegistros(normalizados.reverse());
       setMensaje(`Datos cargados: ${normalizados.length} registros.`);
     } catch (error) {
       console.error(error);
@@ -440,10 +455,11 @@ export default function App() {
       return;
     }
 
-    const empleado = empleados.find((e) => e.id === form.empleadoId);
-    const proyecto = proyectosDisponibles.find((p) => p.id === form.proyectoId);
+    const empleado = empleadosApp.find((e) => e.id === form.empleadoId);
+    const proyecto = proyectosApp.find((p) => p.id === form.proyectoId);
     const km = Number(form.km);
-    const importe = km * PRECIO_KM;
+    const precioKm = empleado?.precioKm || PRECIO_KM;
+    const importe = km * precioKm;
 
     const nuevo = {
       fecha: form.fecha,
@@ -454,7 +470,7 @@ export default function App() {
       destino: form.destino,
       km,
       observaciones: form.observaciones,
-      precioKm: PRECIO_KM,
+      precioKm,
       importe,
     };
 
@@ -930,7 +946,7 @@ export default function App() {
               <Field label="Empleado">
                 <select name="empleadoId" value={form.empleadoId} onChange={handleChange} style={inputStyle}>
                   <option value="">Selecciona empleado</option>
-                  {empleados.map((e) => (
+                  {empleadosApp.map((e) => (
                     <option key={e.id} value={e.id}>
                       {e.nombre}
                     </option>
@@ -941,7 +957,7 @@ export default function App() {
               <Field label="Proyecto">
                 <select name="proyectoId" value={form.proyectoId} onChange={handleChange} style={inputStyle}>
                   <option value="">Selecciona proyecto</option>
-                  {proyectosDisponibles
+                  {proyectosApp
                     .filter((p) => p.activo)
                     .map((p) => (
                       <option key={p.id} value={p.id}>
@@ -1101,7 +1117,7 @@ export default function App() {
                   style={inputStyle}
                 >
                   <option value="">Todos</option>
-                  {empleados.map((e) => (
+                  {empleadosApp.map((e) => (
                     <option key={e.id} value={e.id}>
                       {e.nombre}
                     </option>
@@ -1116,7 +1132,7 @@ export default function App() {
                   style={inputStyle}
                 >
                   <option value="">Todos</option>
-                  {proyectosDisponibles.map((p) => (
+                  {proyectosApp.map((p) => (
                     <option key={p.id} value={p.id}>
                       {p.nombre}
                     </option>
@@ -1214,7 +1230,7 @@ export default function App() {
           <Box title="Proyectos">
             <Table
               headers={["ID", "Proyecto", "Activo"]}
-              rows={proyectosDisponibles.map((p) => [
+              rows={proyectosApp.map((p) => [
                 p.id,
                 <ProjectBadge key={p.id} proyectoId={p.id} proyecto={p.nombre} />,
                 p.activo ? "Sí" : "No",
@@ -1226,8 +1242,8 @@ export default function App() {
         {tab === "empleados" && (
           <Box title="Empleados">
             <Table
-              headers={["ID", "Empleado", "Activo"]}
-              rows={empleados.map((e) => [e.id, e.nombre, e.activo ? "Sí" : "No"])}
+              headers={["ID", "Empleado", "Email", "Rol", "€/KM", "Activo"]}
+              rows={empleadosApp.map((e) => [e.id, e.nombre, e.email || "", e.rol || "", euros(e.precioKm), e.activo ? "Sí" : "No"])}
             />
           </Box>
         )}
