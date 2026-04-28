@@ -385,17 +385,18 @@ export default function App() {
     const importe = km * PRECIO_KM;
 
     const nuevo = {
-      fecha: form.fecha,
-      empleadoId: form.empleadoId,
-      empleado: empleado?.nombre || "",
-      proyectoId: form.proyectoId,
-      proyecto: proyecto?.nombre || "",
-      destino: form.destino,
-      km,
-      observaciones: form.observaciones,
-      precioKm: PRECIO_KM,
-      importe,
-    };
+  idRegistro: "km_" + Date.now(),
+  fecha: form.fecha,
+  empleadoId: form.empleadoId,
+  empleado: empleado?.nombre || "",
+  proyectoId: form.proyectoId,
+  proyecto: proyecto?.nombre || "",
+  destino: form.destino,
+  km,
+  observaciones: form.observaciones,
+  precioKm: PRECIO_KM,
+  importe,
+};
 
     try {
       setGuardando(true);
