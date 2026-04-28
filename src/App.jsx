@@ -522,7 +522,8 @@ export default function App() {
       km: "",
       observaciones: "",
     });
-    setMensaje("Edición cancelada.");
+    setTab("historico");
+    setMensaje("Edición cancelada. Has vuelto al histórico.");
   }
 
   async function eliminarRegistro(idRegistro) {
