@@ -274,13 +274,22 @@ function normalizarRegistro(row, index) {
 }
 
 
-function normalizarProyecto(row) {
-  const activo = String(row["ACTIVO"] ?? "").trim().toLowerCase();
+function esActivo(valor) {
+  if (valor === true) return true;
+  const normalizado = String(valor ?? "")
+    .trim()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toUpperCase();
 
+  return normalizado === "SI";
+}
+
+function normalizarProyecto(row) {
   return {
     id: row["ID PROYECTO"] || row["PROYECTO ID"] || row["id"] || "",
     nombre: row["NOMBRE PROYECTO"] || row["PROYECTO"] || row["nombre"] || "",
-    activo: activo === "" || activo === "sí" || activo === "si" || activo === "true" || activo === "activo" || activo === "1",
+    activo: esActivo(row["ACTIVO"]),
   };
 }
 
@@ -292,15 +301,13 @@ function parseNumero(valor, fallback = 0) {
 }
 
 function normalizarEmpleado(row) {
-  const activo = String(row["ACTIVO"] ?? "").trim().toLowerCase();
-
   return {
     id: row["ID"] || row["EMPLEADO ID"] || row["id"] || "",
     nombre: row["NOMBRE"] || row["EMPLEADO"] || row["nombre"] || "",
     email: row["EMAIL"] || "",
     rol: row["ROL"] || "",
     precioKm: parseNumero(row["€/KM"], PRECIO_KM),
-    activo: activo === "sí" || activo === "si" || activo === "true" || activo === "activo" || activo === "1",
+    activo: esActivo(row["ACTIVO"]),
   };
 }
 
@@ -430,7 +437,7 @@ export default function App() {
       if (empleadosSheet.length > 0) {
         const empleadosNormalizados = empleadosSheet
           .map(normalizarEmpleado)
-          .filter((e) => e.id && e.nombre && e.activo);
+          .filter((e) => e.id && e.nombre && esActivo(e.activo));
 
         setEmpleadosApp(empleadosNormalizados);
       }
@@ -958,7 +965,7 @@ export default function App() {
                 <select name="proyectoId" value={form.proyectoId} onChange={handleChange} style={inputStyle}>
                   <option value="">Selecciona proyecto</option>
                   {proyectosApp
-                    .filter((p) => p.activo)
+                    .filter((p) => esActivo(p.activo))
                     .map((p) => (
                       <option key={p.id} value={p.id}>
                         {p.nombre}
