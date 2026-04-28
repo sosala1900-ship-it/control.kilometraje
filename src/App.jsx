@@ -846,11 +846,11 @@ export default function App() {
       <div style={containerStyle}>
         <header style={headerStyle}>
           <div>
-            <h1 style={{ margin: "0", fontSize: 34, letterSpacing: -0.5 }}>
+            <h1 style={{ margin: "0", fontSize: 30, letterSpacing: -0.6, fontWeight: 700 }}>
               Control de Kilometraje
             </h1>
-            <p style={{ color: "#64748b", marginTop: 6 }}>
-              Dashboard mensual, histórico y control acumulado por proyecto.
+            <p style={{ color: "#64748b", marginTop: 6, marginBottom: 0, fontSize: 14 }}>
+              Fundación Canaria Imagine 2050 · Gestión mensual de desplazamientos
             </p>
           </div>
 
@@ -1300,7 +1300,7 @@ function Box({ title, children }) {
 function Field({ label, children, full = false }) {
   return (
     <label style={{ display: "grid", gap: 5, gridColumn: full ? "1 / -1" : "auto" }}>
-      <span style={{ fontSize: 13, fontWeight: 600, color: "#334155" }}>
+      <span style={{ fontSize: 12, fontWeight: 600, color: "#475569", letterSpacing: "0.1px" }}>
         {label}
       </span>
       {children}
@@ -1310,8 +1310,8 @@ function Field({ label, children, full = false }) {
 
 function Table({ headers, rows }) {
   return (
-    <div style={{ overflowX: "auto" }}>
-      <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 14 }}>
+    <div style={{ overflowX: "auto", borderRadius: 14, border: "1px solid #edf2f7" }}>
+      <table style={{ width: "100%", borderCollapse: "separate", borderSpacing: 0, fontSize: 13 }}>
         <thead>
           <tr>
             {headers.map((h) => (
@@ -1348,14 +1348,14 @@ function Table({ headers, rows }) {
 
 const pageStyle = {
   minHeight: "100vh",
-  background: "linear-gradient(180deg, #f8fafc 0%, #eef2ff 100%)",
-  padding: 24,
-  fontFamily: "Arial, sans-serif",
+  background: "linear-gradient(180deg, #f8fafc 0%, #eef2ff 52%, #f8fafc 100%)",
+  padding: "28px 22px",
+  fontFamily: "Inter, Segoe UI, Arial, sans-serif",
   color: "#0f172a",
 };
 
 const containerStyle = {
-  maxWidth: 1250,
+  maxWidth: 1220,
   margin: "0 auto",
 };
 
@@ -1363,8 +1363,14 @@ const headerStyle = {
   display: "flex",
   justifyContent: "space-between",
   gap: 16,
-  alignItems: "flex-start",
-  marginBottom: 24,
+  alignItems: "center",
+  marginBottom: 18,
+  padding: "20px 22px",
+  background: "rgba(255, 255, 255, 0.82)",
+  border: "1px solid rgba(226, 232, 240, 0.9)",
+  borderRadius: 22,
+  boxShadow: "0 16px 36px rgba(15, 23, 42, 0.06)",
+  backdropFilter: "blur(10px)",
 };
 
 const appBadgeStyle = {
@@ -1382,22 +1388,27 @@ const appBadgeStyle = {
 const navStyle = {
   display: "flex",
   gap: 8,
-  marginBottom: 20,
+  marginBottom: 18,
   flexWrap: "wrap",
+  padding: 6,
+  background: "rgba(255, 255, 255, 0.72)",
+  border: "1px solid rgba(226, 232, 240, 0.9)",
+  borderRadius: 18,
+  boxShadow: "0 8px 22px rgba(15, 23, 42, 0.04)",
 };
 
 const gridFiltersStyle = {
   display: "grid",
-  gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
+  gridTemplateColumns: "repeat(auto-fit, minmax(170px, 1fr))",
   gap: 12,
-  marginBottom: 16,
+  marginBottom: 14,
 };
 
 const registroFormGridStyle = {
   display: "grid",
   gridTemplateColumns: "1fr",
-  gap: 12,
-  maxWidth: 880,
+  gap: 14,
+  maxWidth: 900,
   margin: "0 auto",
   alignItems: "start",
 };
@@ -1418,10 +1429,11 @@ const registroKmResumenStyle = {
 const resumenCalculoStyle = {
   minHeight: 42,
   boxSizing: "border-box",
-  padding: "7px 12px",
-  background: "#F8FAFC",
-  border: "1px solid #E2E8F0",
-  borderRadius: 11,
+  padding: "8px 12px",
+  background: "linear-gradient(180deg, #f8fafc, #ffffff)",
+  border: "1px solid #e2e8f0",
+  borderRadius: 12,
+  boxShadow: "inset 0 1px 0 rgba(255, 255, 255, 0.8)",
 };
 
 const cardsGridStyle = {
@@ -1438,21 +1450,21 @@ const twoColumnsStyle = {
 };
 
 const cardStyle = {
-  background: "rgba(255, 255, 255, 0.94)",
+  background: "rgba(255, 255, 255, 0.96)",
   padding: 20,
-  borderRadius: 18,
-  border: "1px solid #e2e8f0",
-  boxShadow: "0 12px 28px rgba(15, 23, 42, 0.07)",
+  borderRadius: 20,
+  border: "1px solid rgba(226, 232, 240, 0.95)",
+  boxShadow: "0 14px 30px rgba(15, 23, 42, 0.055)",
   transition: "all 0.2s ease",
 };
 
 const boxStyle = {
   background: "rgba(255, 255, 255, 0.96)",
   padding: 22,
-  borderRadius: 18,
-  border: "1px solid #e2e8f0",
-  marginBottom: 20,
-  boxShadow: "0 14px 32px rgba(15, 23, 42, 0.06)",
+  borderRadius: 20,
+  border: "1px solid rgba(226, 232, 240, 0.95)",
+  marginBottom: 18,
+  boxShadow: "0 14px 32px rgba(15, 23, 42, 0.055)",
 };
 
 const inputStyle = {
@@ -1460,27 +1472,30 @@ const inputStyle = {
   boxSizing: "border-box",
   border: "1px solid #cbd5e1",
   borderRadius: 12,
-  padding: "11px 12px",
+  padding: "10px 12px",
   fontSize: 14,
-  background: "white",
+  background: "#ffffff",
   outline: "none",
+  color: "#0f172a",
+  boxShadow: "inset 0 1px 2px rgba(15, 23, 42, 0.035)",
 };
 
 const compactInputStyle = {
   ...inputStyle,
-  minHeight: 42,
-  padding: "9px 12px",
+  minHeight: 40,
+  padding: "8px 12px",
   borderRadius: 11,
 };
 
 const messageStyle = {
-  background: "white",
+  background: "#eff6ff",
   border: "1px solid #bfdbfe",
-  padding: 12,
+  padding: "11px 13px",
   borderRadius: 14,
-  marginBottom: 18,
+  marginBottom: 16,
   color: "#1e3a8a",
-  boxShadow: "0 4px 12px rgba(37, 99, 235, 0.08)",
+  boxShadow: "0 8px 18px rgba(37, 99, 235, 0.08)",
+  fontSize: 14,
 };
 
 const editNoticeStyle = {
@@ -1503,40 +1518,44 @@ const paginationStyle = {
 
 const thStyle = {
   textAlign: "left",
-  borderBottom: "2px solid #e2e8f0",
-  padding: "12px 10px",
-  color: "#334155",
-  fontWeight: 800,
-  fontSize: 12,
+  borderBottom: "1px solid #e2e8f0",
+  padding: "11px 10px",
+  color: "#475569",
+  background: "#f8fafc",
+  fontWeight: 700,
+  fontSize: 11,
   textTransform: "uppercase",
-  letterSpacing: 0.3,
+  letterSpacing: 0.35,
 };
 
 const tdStyle = {
   borderBottom: "1px solid #f1f5f9",
-  padding: "12px 10px",
-  verticalAlign: "top",
+  padding: "11px 10px",
+  verticalAlign: "middle",
+  color: "#334155",
 };
 
 function buttonStyle(active, id, hoveredButton) {
   const isHover = hoveredButton === id;
 
   return {
-    border: active ? "1px solid #cbd5e1" : "1px solid #e2e8f0",
-    borderRadius: 14,
-    padding: "10px 16px",
+    border: active ? "1px solid #bfdbfe" : "1px solid transparent",
+    borderRadius: 13,
+    padding: "9px 14px",
     background: active
-      ? "linear-gradient(135deg, #e2e8f0, #cbd5e1)"
-      : "linear-gradient(135deg, #ffffff, #f8fafc)",
-    color: "#1f2937",
+      ? "linear-gradient(135deg, #dbeafe, #eff6ff)"
+      : isHover
+      ? "#ffffff"
+      : "transparent",
+    color: active ? "#1e3a8a" : "#475569",
     fontWeight: active ? 600 : 500,
-    letterSpacing: "0.1px",
+    letterSpacing: "0.05px",
     cursor: "pointer",
-    boxShadow: isHover
-      ? "0 6px 16px rgba(15, 23, 42, 0.12)"
-      : "0 2px 6px rgba(15, 23, 42, 0.06)",
+    boxShadow: isHover || active
+      ? "0 6px 16px rgba(15, 23, 42, 0.08)"
+      : "none",
     transform: isHover ? "translateY(-1px)" : "translateY(0)",
-    transition: "all 0.2s ease",
+    transition: "all 0.18s ease",
     opacity: 1,
   };
 }
@@ -1546,20 +1565,20 @@ function primaryButtonStyle(id, hoveredButton) {
 
   return {
     border: "1px solid #bfdbfe",
-    borderRadius: 14,
-    padding: "13px 18px",
+    borderRadius: 13,
+    padding: "11px 16px",
     background: isHover
-      ? "linear-gradient(135deg, #bfdbfe, #93c5fd)"
-      : "linear-gradient(135deg, #dbeafe, #bfdbfe)",
+      ? "linear-gradient(135deg, #bfdbfe, #dbeafe)"
+      : "linear-gradient(135deg, #dbeafe, #eff6ff)",
     color: "#1e3a8a",
-    fontWeight: 500,
-    letterSpacing: "0.1px",
+    fontWeight: 600,
+    letterSpacing: "0.05px",
     cursor: "pointer",
     boxShadow: isHover
-      ? "0 8px 18px rgba(37, 99, 235, 0.14)"
-      : "0 4px 12px rgba(37, 99, 235, 0.08)",
+      ? "0 10px 20px rgba(37, 99, 235, 0.14)"
+      : "0 6px 14px rgba(37, 99, 235, 0.08)",
     transform: isHover ? "translateY(-1px)" : "translateY(0)",
-    transition: "all 0.2s ease",
+    transition: "all 0.18s ease",
   };
 }
 
@@ -1568,22 +1587,17 @@ function editButtonStyle(id, hoveredButton, disabled = false) {
 
   return {
     border: "1px solid #bfdbfe",
-    borderRadius: 10,
-    padding: "7px 11px",
-    background: disabled
-      ? "#f8fafc"
-      : isHover
-      ? "linear-gradient(135deg, #dbeafe, #bfdbfe)"
-      : "#dbeafe",
+    borderRadius: 9,
+    padding: "6px 10px",
+    background: disabled ? "#f8fafc" : isHover ? "#bfdbfe" : "#dbeafe",
     color: disabled ? "#94a3b8" : "#1e3a8a",
     cursor: disabled ? "not-allowed" : "pointer",
     fontWeight: 500,
-    letterSpacing: "0.1px",
-    boxShadow: isHover
-      ? "0 6px 14px rgba(37, 99, 235, 0.12)"
-      : "0 2px 6px rgba(37, 99, 235, 0.06)",
+    fontSize: 12,
+    letterSpacing: "0.05px",
+    boxShadow: isHover ? "0 6px 14px rgba(37, 99, 235, 0.12)" : "none",
     transform: isHover ? "translateY(-1px)" : "translateY(0)",
-    transition: "all 0.2s ease",
+    transition: "all 0.18s ease",
     opacity: disabled ? 0.65 : 1,
   };
 }
@@ -1593,22 +1607,17 @@ function deleteButtonStyle(id, hoveredButton, disabled = false) {
 
   return {
     border: "1px solid #fecaca",
-    borderRadius: 10,
-    padding: "7px 11px",
-    background: disabled
-      ? "#f8fafc"
-      : isHover
-      ? "linear-gradient(135deg, #fee2e2, #fecaca)"
-      : "#fee2e2",
+    borderRadius: 9,
+    padding: "6px 10px",
+    background: disabled ? "#f8fafc" : isHover ? "#fecaca" : "#fee2e2",
     color: disabled ? "#94a3b8" : "#991b1b",
     cursor: disabled ? "not-allowed" : "pointer",
     fontWeight: 500,
-    letterSpacing: "0.1px",
-    boxShadow: isHover
-      ? "0 6px 14px rgba(153, 27, 27, 0.12)"
-      : "0 2px 6px rgba(153, 27, 27, 0.06)",
+    fontSize: 12,
+    letterSpacing: "0.05px",
+    boxShadow: isHover ? "0 6px 14px rgba(153, 27, 27, 0.12)" : "none",
     transform: isHover ? "translateY(-1px)" : "translateY(0)",
-    transition: "all 0.2s ease",
+    transition: "all 0.18s ease",
     opacity: disabled ? 0.65 : 1,
   };
 }
@@ -1619,20 +1628,19 @@ function secondaryButtonStyle(id, hoveredButton) {
   return {
     marginTop: 0,
     marginBottom: 12,
-    padding: "9px 13px",
-    borderRadius: 12,
+    padding: "8px 12px",
+    borderRadius: 11,
     border: "1px solid #cbd5e1",
-    background: isHover
-      ? "linear-gradient(135deg, #f1f5f9, #e2e8f0)"
-      : "#ffffff",
+    background: isHover ? "#f8fafc" : "#ffffff",
     color: "#334155",
     cursor: "pointer",
     fontWeight: 500,
-    letterSpacing: "0.1px",
+    fontSize: 13,
+    letterSpacing: "0.05px",
     boxShadow: isHover
-      ? "0 5px 14px rgba(15, 23, 42, 0.10)"
-      : "0 2px 6px rgba(15, 23, 42, 0.05)",
+      ? "0 6px 14px rgba(15, 23, 42, 0.08)"
+      : "0 1px 4px rgba(15, 23, 42, 0.04)",
     transform: isHover ? "translateY(-1px)" : "translateY(0)",
-    transition: "all 0.2s ease",
+    transition: "all 0.18s ease",
   };
 }
