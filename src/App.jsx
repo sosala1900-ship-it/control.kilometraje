@@ -495,14 +495,16 @@ export default function App() {
   }
 
   async function guardarHoras() {
-    if (!formHoras.fecha || !formHoras.empleadoId || !formHoras.proyectoId || !formHoras.horas) {
-      setMensaje("Completa fecha, empleado, proyecto y horas.");
+    const horas = parseNumero(formHoras.horas, 0);
+
+    if (!formHoras.fecha || !formHoras.empleadoId || !formHoras.proyectoId || horas <= 0) {
+      setMensaje("Completa fecha, empleado, proyecto y horas. Las horas deben ser mayores que 0.");
       return;
     }
 
     const empleado = empleadosApp.find((e) => e.id === formHoras.empleadoId);
     const proyecto = proyectosApp.find((p) => p.id === formHoras.proyectoId);
-    const horas = Number(formHoras.horas);
+    const idTemporal = "hr_tmp_" + Date.now();
 
     const nuevo = {
       tipo: "horas",
@@ -528,7 +530,21 @@ export default function App() {
         body: JSON.stringify(nuevo),
       });
 
-      setHorasComplementarias([{ id: Date.now(), ...nuevo }, ...horasComplementarias]);
+      setHorasComplementarias((prev) => [
+        {
+          id: idTemporal,
+          idRegistro: idTemporal,
+          fecha: nuevo.fecha,
+          empleadoId: nuevo.empleadoId,
+          empleado: nuevo.empleado,
+          proyectoId: nuevo.proyectoId,
+          proyecto: nuevo.proyecto,
+          horas: nuevo.horas,
+          observaciones: nuevo.observaciones,
+        },
+        ...prev,
+      ]);
+
       setFormHoras({
         fecha: "",
         empleadoId: "",
@@ -545,7 +561,6 @@ export default function App() {
       setGuardando(false);
     }
   }
-
   async function guardar() {
     if (!form.fecha || !form.empleadoId || !form.proyectoId || !form.km) {
       setMensaje("Completa fecha, empleado, proyecto y km.");
@@ -1002,7 +1017,7 @@ export default function App() {
 
         {mensaje && <div style={messageStyle}>{mensaje}</div>}
 
-        {(tab === "dashboard" || tab === "informe") && (
+        {(tab === "dashboard" || tab === "informe" || tab === "horas") && (
           <Box title="Periodo de trabajo">
             <div style={periodControlsStyle}>
               <div style={{ width: 180 }}>
@@ -1211,7 +1226,7 @@ export default function App() {
 
                       <div style={resumenCalculoStyle}>
                         <div style={{ fontSize: 12, color: "#64748B", marginBottom: 4 }}>Total</div>
-                        <strong style={{ color: "#334155", fontWeight: 500 }}>{numero(formHoras.horas || 0)} h</strong>
+                        <strong style={{ color: "#334155", fontWeight: 500 }}>{numero(parseNumero(formHoras.horas, 0))} h</strong>
                       </div>
                     </div>
 
@@ -1255,6 +1270,15 @@ export default function App() {
                   </div>
                 </div>
               </div>
+            </Box>
+
+            <Box title="Horas por empleado para asesoría">
+              <Table
+                headers={["Empleado", "Horas"]}
+                rows={horasPorEmpleadoMes
+                  .filter((r) => Number(r.horas || 0) > 0)
+                  .map((r) => [r.empleado, `${numero(r.horas)} h`])}
+              />
             </Box>
 
             <Box title="Horas por proyecto">
