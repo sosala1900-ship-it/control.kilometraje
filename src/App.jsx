@@ -1,4 +1,4 @@
-// App.jsx — versión PRO con hover, colores por proyecto, histórico con filtros, paginación y eliminación
+// App.jsx — versión PRO con kilometraje y horas complementarias
 import { useEffect, useMemo, useState } from "react";
 
 const API_URL =
@@ -42,6 +42,7 @@ const proyectos = [
 const tabs = [
   { id: "dashboard", label: "Dashboard" },
   { id: "registro", label: "Nuevo registro" },
+  { id: "horas", label: "Horas complementarias" },
   { id: "informe", label: "Informe mensual" },
   { id: "acumulado", label: "Acumulado por proyecto" },
   { id: "historico", label: "Histórico" },
@@ -273,6 +274,20 @@ function normalizarRegistro(row, index) {
   };
 }
 
+function normalizarHora(row, index) {
+  return {
+    id: index + 1,
+    idRegistro: row["ID_REGISTRO"] || row["idRegistro"] || "",
+    fecha: row["FECHA"] || "",
+    empleadoId: row["EMPLEADO ID"] || "",
+    empleado: row["EMPLEADO"] || "",
+    proyectoId: row["PROYECTO ID"] || "",
+    proyecto: row["PROYECTO"] || "",
+    horas: Number(row["HORAS"]) || 0,
+    observaciones: row["OBSERVACIONES"] || "",
+  };
+}
+
 
 function esActivo(valor) {
   if (valor === true) return true;
@@ -375,6 +390,7 @@ export default function App() {
 
   const [tab, setTab] = useState("dashboard");
   const [registros, setRegistros] = useState([]);
+  const [horasComplementarias, setHorasComplementarias] = useState([]);
   const [proyectosApp, setProyectosApp] = useState(proyectos);
   const [empleadosApp, setEmpleadosApp] = useState([]);
   const [mensaje, setMensaje] = useState("");
@@ -406,6 +422,14 @@ export default function App() {
     observaciones: "",
   });
 
+  const [formHoras, setFormHoras] = useState({
+    fecha: "",
+    empleadoId: "",
+    proyectoId: "",
+    horas: "",
+    observaciones: "",
+  });
+
   const empleadoSeleccionado = empleadosApp.find((e) => e.id === form.empleadoId);
   const precioKmAplicado = empleadoSeleccionado ? empleadoSeleccionado.precioKm || PRECIO_KM : PRECIO_KM;
   const importe = form.km ? Number(form.km || 0) * precioKmAplicado : 0;
@@ -421,12 +445,17 @@ export default function App() {
 
       const data = await cargarDatosJsonp();
       const registrosSheet = Array.isArray(data) ? data : data?.registros || [];
+      const horasSheet = Array.isArray(data?.horas) ? data.horas : [];
       const proyectosSheet = Array.isArray(data?.proyectos) ? data.proyectos : [];
       const empleadosSheet = Array.isArray(data?.empleados) ? data.empleados : [];
 
       const normalizados = registrosSheet
         .map((row, index) => normalizarRegistro(row, index))
         .filter((r) => r.fecha || r.empleado || r.proyecto || r.km);
+
+      const horasNormalizadas = horasSheet
+        .map((row, index) => normalizarHora(row, index))
+        .filter((r) => r.fecha || r.empleado || r.proyecto || r.horas);
 
       if (proyectosSheet.length > 0) {
         const proyectosNormalizados = proyectosSheet
@@ -447,7 +476,8 @@ export default function App() {
       }
 
       setRegistros(normalizados.reverse());
-      setMensaje(`Datos cargados: ${normalizados.length} registros.`);
+      setHorasComplementarias(horasNormalizadas.reverse());
+      setMensaje("Datos cargados: " + normalizados.length + " registros de kilometraje y " + horasNormalizadas.length + " registros de horas.");
     } catch (error) {
       console.error(error);
       setMensaje("No se pudieron cargar los datos del Sheet.");
@@ -458,6 +488,62 @@ export default function App() {
 
   function handleChange(e) {
     setForm({ ...form, [e.target.name]: e.target.value });
+  }
+
+  function handleHorasChange(e) {
+    setFormHoras({ ...formHoras, [e.target.name]: e.target.value });
+  }
+
+  async function guardarHoras() {
+    if (!formHoras.fecha || !formHoras.empleadoId || !formHoras.proyectoId || !formHoras.horas) {
+      setMensaje("Completa fecha, empleado, proyecto y horas.");
+      return;
+    }
+
+    const empleado = empleadosApp.find((e) => e.id === formHoras.empleadoId);
+    const proyecto = proyectosApp.find((p) => p.id === formHoras.proyectoId);
+    const horas = Number(formHoras.horas);
+
+    const nuevo = {
+      tipo: "horas",
+      fecha: formHoras.fecha,
+      empleadoId: formHoras.empleadoId,
+      empleado: empleado?.nombre || "",
+      proyectoId: formHoras.proyectoId,
+      proyecto: proyecto?.nombre || "",
+      horas,
+      observaciones: formHoras.observaciones,
+    };
+
+    try {
+      setGuardando(true);
+      setMensaje("Guardando horas complementarias en Google Sheets...");
+
+      await fetch(API_URL, {
+        method: "POST",
+        mode: "no-cors",
+        headers: {
+          "Content-Type": "text/plain;charset=utf-8",
+        },
+        body: JSON.stringify(nuevo),
+      });
+
+      setHorasComplementarias([{ id: Date.now(), ...nuevo }, ...horasComplementarias]);
+      setFormHoras({
+        fecha: "",
+        empleadoId: "",
+        proyectoId: "",
+        horas: "",
+        observaciones: "",
+      });
+      setMensaje("Horas complementarias guardadas correctamente.");
+      cargarDatos();
+    } catch (error) {
+      console.error(error);
+      setMensaje("Error al guardar las horas complementarias.");
+    } finally {
+      setGuardando(false);
+    }
   }
 
   async function guardar() {
@@ -812,6 +898,41 @@ export default function App() {
     );
   }, [registros, mes, anio]);
 
+  const horasMes = useMemo(() => {
+    return horasComplementarias.filter(
+      (r) => getMonth(r.fecha) === mes && getYear(r.fecha) === anio
+    );
+  }, [horasComplementarias, mes, anio]);
+
+  const totalHorasMes = useMemo(
+    () => horasMes.reduce((acc, r) => acc + Number(r.horas || 0), 0),
+    [horasMes]
+  );
+
+  const horasPorEmpleadoMes = useMemo(() => {
+    const map = {};
+    horasMes.forEach((r) => {
+      const key = r.empleadoId || r.empleado || "SIN EMPLEADO";
+      if (!map[key]) map[key] = { empleado: r.empleado || key, horas: 0, registros: 0 };
+      map[key].horas += Number(r.horas || 0);
+      map[key].registros += 1;
+    });
+    return Object.values(map).sort((a, b) => b.horas - a.horas);
+  }, [horasMes]);
+
+  const horasPorProyectoMes = useMemo(() => {
+    const map = {};
+    horasMes.forEach((r) => {
+      const key = r.proyectoId || r.proyecto || "SIN PROYECTO";
+      if (!map[key]) map[key] = { proyectoId: r.proyectoId || key, proyecto: r.proyecto || key, horas: 0, registros: 0 };
+      map[key].horas += Number(r.horas || 0);
+      map[key].registros += 1;
+    });
+    return Object.values(map).sort((a, b) => b.horas - a.horas);
+  }, [horasMes]);
+
+  const ultimasHoras = useMemo(() => horasComplementarias.slice(0, 8), [horasComplementarias]);
+
   const totalesMes = useMemo(() => calcularTotales(registrosMes), [registrosMes]);
   const porEmpleadoMes = useMemo(() => agruparPorEmpleado(registrosMes), [registrosMes]);
   const informeAsesoria = useMemo(
@@ -846,11 +967,11 @@ export default function App() {
       <div style={containerStyle}>
         <header style={headerStyle}>
           <div>
-            <h1 style={{ margin: "0", fontSize: 30, letterSpacing: -0.6, fontWeight: 700 }}>
+            <h1 style={{ margin: "0", fontSize: 34, letterSpacing: -0.5 }}>
               Control de Kilometraje
             </h1>
-            <p style={{ color: "#64748b", marginTop: 6, marginBottom: 0, fontSize: 14 }}>
-              Fundación Canaria Imagine 2050 · Gestión mensual de desplazamientos
+            <p style={{ color: "#64748b", marginTop: 6 }}>
+              Dashboard mensual, histórico y control acumulado por proyecto.
             </p>
           </div>
 
@@ -883,8 +1004,9 @@ export default function App() {
 
         {(tab === "dashboard" || tab === "informe") && (
           <Box title="Periodo de trabajo">
-            <div style={gridFiltersStyle}>
-              <Field label="Mes">
+            <div style={periodControlsStyle}>
+              <div style={{ width: 180 }}>
+                <Field label="Mes">
                 <select value={mes} onChange={(e) => setMes(e.target.value)} style={compactInputStyle}>
                   {meses.map((m) => (
                     <option key={m.value} value={m.value}>
@@ -892,15 +1014,18 @@ export default function App() {
                     </option>
                   ))}
                 </select>
-              </Field>
+                </Field>
+              </div>
 
-              <Field label="Año">
+              <div style={{ width: 120 }}>
+                <Field label="Año">
                 <select value={anio} onChange={(e) => setAnio(e.target.value)} style={compactInputStyle}>
                   <option value="2026">2026</option>
                   <option value="2027">2027</option>
                   <option value="2028">2028</option>
                 </select>
-              </Field>
+                </Field>
+              </div>
             </div>
           </Box>
         )}
@@ -1038,6 +1163,124 @@ export default function App() {
               </div>
             </div>
           </Box>
+        )}
+
+        {tab === "horas" && (
+          <>
+            <Box title="Horas complementarias">
+              <div style={hoursLayoutStyle}>
+                <div style={hoursFormPanelStyle}>
+                  <h3 style={sectionTitleStyle}>Nuevo registro de horas</h3>
+                  <p style={sectionSubtitleStyle}>Registra horas complementarias por empleado y proyecto sin mezclarlo con kilometraje.</p>
+
+                  <div style={hoursFormGridStyle}>
+                    <div style={registroTwoColumnsStyle}>
+                      <Field label="Fecha">
+                        <input type="date" name="fecha" value={formHoras.fecha} onChange={handleHorasChange} style={compactInputStyle} />
+                      </Field>
+
+                      <Field label="Empleado">
+                        <select name="empleadoId" value={formHoras.empleadoId} onChange={handleHorasChange} style={compactInputStyle}>
+                          <option value="">Selecciona empleado</option>
+                          {empleadosApp.map((e) => (
+                            <option key={e.id} value={e.id}>
+                              {e.nombre}
+                            </option>
+                          ))}
+                        </select>
+                      </Field>
+                    </div>
+
+                    <Field label="Proyecto" full>
+                      <select name="proyectoId" value={formHoras.proyectoId} onChange={handleHorasChange} style={compactInputStyle}>
+                        <option value="">Selecciona proyecto</option>
+                        {proyectosApp
+                          .filter((p) => esActivo(p.activo))
+                          .map((p) => (
+                            <option key={p.id} value={p.id}>
+                              {p.nombre}
+                            </option>
+                          ))}
+                      </select>
+                    </Field>
+
+                    <div style={hoursInlineRowStyle}>
+                      <Field label="Horas">
+                        <input type="number" step="0.25" name="horas" value={formHoras.horas} onChange={handleHorasChange} placeholder="Ej. 2,5" style={compactInputStyle} />
+                      </Field>
+
+                      <div style={resumenCalculoStyle}>
+                        <div style={{ fontSize: 12, color: "#64748B", marginBottom: 4 }}>Total</div>
+                        <strong style={{ color: "#334155", fontWeight: 500 }}>{numero(formHoras.horas || 0)} h</strong>
+                      </div>
+                    </div>
+
+                    <Field label="Observaciones" full>
+                      <textarea name="observaciones" value={formHoras.observaciones} onChange={handleHorasChange} placeholder="Opcional" style={{ ...compactInputStyle, minHeight: 76, resize: "vertical" }} />
+                    </Field>
+
+                    <div style={{ gridColumn: "1 / -1", display: "flex", gap: 10, flexWrap: "wrap" }}>
+                      <button
+                        type="button"
+                        onClick={guardarHoras}
+                        disabled={guardando}
+                        onMouseEnter={() => setHoveredButton("guardar-horas")}
+                        onMouseLeave={() => setHoveredButton(null)}
+                        style={primaryButtonStyle("guardar-horas", hoveredButton)}
+                      >
+                        {guardando ? "Guardando..." : "Guardar horas"}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                <div style={hoursSummaryPanelStyle}>
+                  <h3 style={sectionTitleStyle}>Resumen del mes</h3>
+                  <div style={miniCardsGridStyle}>
+                    <div style={miniCardStyle}>
+                      <span>Registros</span>
+                      <strong>{horasMes.length}</strong>
+                    </div>
+                    <div style={miniCardStyle}>
+                      <span>Horas</span>
+                      <strong>{numero(totalHorasMes)} h</strong>
+                    </div>
+                  </div>
+
+                  <div style={{ marginTop: 16 }}>
+                    <Table
+                      headers={["Empleado", "Horas", "Registros"]}
+                      rows={horasPorEmpleadoMes.map((r) => [r.empleado, `${numero(r.horas)} h`, r.registros])}
+                    />
+                  </div>
+                </div>
+              </div>
+            </Box>
+
+            <Box title="Horas por proyecto">
+              <Table
+                headers={["Proyecto", "Horas", "Registros"]}
+                rows={horasPorProyectoMes.map((r) => [
+                  <ProjectBadge key={r.proyectoId} proyectoId={r.proyectoId} proyecto={r.proyecto} />,
+                  `${numero(r.horas)} h`,
+                  r.registros,
+                ])}
+              />
+            </Box>
+
+            <Box title="Últimos registros de horas">
+              <Table
+                headers={["Fecha", "Empleado", "Proyecto", "Horas", "Observaciones"]}
+                rows={ultimasHoras.map((r) => [
+                  formatDate(r.fecha),
+                  r.empleado,
+                  <ProjectBadge key={r.idRegistro || r.id} proyectoId={r.proyectoId} proyecto={r.proyecto} />,
+                  `${numero(r.horas)} h`,
+                  r.observaciones || "",
+                ])}
+              />
+            </Box>
+          </>
         )}
 
         {tab === "informe" && (
@@ -1300,7 +1543,7 @@ function Box({ title, children }) {
 function Field({ label, children, full = false }) {
   return (
     <label style={{ display: "grid", gap: 5, gridColumn: full ? "1 / -1" : "auto" }}>
-      <span style={{ fontSize: 12, fontWeight: 600, color: "#475569", letterSpacing: "0.1px" }}>
+      <span style={{ fontSize: 13, fontWeight: 600, color: "#334155" }}>
         {label}
       </span>
       {children}
@@ -1310,8 +1553,8 @@ function Field({ label, children, full = false }) {
 
 function Table({ headers, rows }) {
   return (
-    <div style={{ overflowX: "auto", borderRadius: 14, border: "1px solid #edf2f7" }}>
-      <table style={{ width: "100%", borderCollapse: "separate", borderSpacing: 0, fontSize: 13 }}>
+    <div style={{ overflowX: "auto" }}>
+      <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 14 }}>
         <thead>
           <tr>
             {headers.map((h) => (
@@ -1348,14 +1591,14 @@ function Table({ headers, rows }) {
 
 const pageStyle = {
   minHeight: "100vh",
-  background: "linear-gradient(180deg, #f8fafc 0%, #eef2ff 52%, #f8fafc 100%)",
-  padding: "28px 22px",
-  fontFamily: "Inter, Segoe UI, Arial, sans-serif",
+  background: "linear-gradient(180deg, #f8fafc 0%, #eef2ff 100%)",
+  padding: 24,
+  fontFamily: "Arial, sans-serif",
   color: "#0f172a",
 };
 
 const containerStyle = {
-  maxWidth: 1220,
+  maxWidth: 1250,
   margin: "0 auto",
 };
 
@@ -1363,14 +1606,8 @@ const headerStyle = {
   display: "flex",
   justifyContent: "space-between",
   gap: 16,
-  alignItems: "center",
-  marginBottom: 18,
-  padding: "20px 22px",
-  background: "rgba(255, 255, 255, 0.82)",
-  border: "1px solid rgba(226, 232, 240, 0.9)",
-  borderRadius: 22,
-  boxShadow: "0 16px 36px rgba(15, 23, 42, 0.06)",
-  backdropFilter: "blur(10px)",
+  alignItems: "flex-start",
+  marginBottom: 24,
 };
 
 const appBadgeStyle = {
@@ -1388,27 +1625,22 @@ const appBadgeStyle = {
 const navStyle = {
   display: "flex",
   gap: 8,
-  marginBottom: 18,
+  marginBottom: 20,
   flexWrap: "wrap",
-  padding: 6,
-  background: "rgba(255, 255, 255, 0.72)",
-  border: "1px solid rgba(226, 232, 240, 0.9)",
-  borderRadius: 18,
-  boxShadow: "0 8px 22px rgba(15, 23, 42, 0.04)",
 };
 
 const gridFiltersStyle = {
   display: "grid",
-  gridTemplateColumns: "repeat(auto-fit, minmax(170px, 1fr))",
+  gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
   gap: 12,
-  marginBottom: 14,
+  marginBottom: 16,
 };
 
 const registroFormGridStyle = {
   display: "grid",
   gridTemplateColumns: "1fr",
-  gap: 14,
-  maxWidth: 900,
+  gap: 12,
+  maxWidth: 880,
   margin: "0 auto",
   alignItems: "start",
 };
@@ -1429,11 +1661,83 @@ const registroKmResumenStyle = {
 const resumenCalculoStyle = {
   minHeight: 42,
   boxSizing: "border-box",
-  padding: "8px 12px",
-  background: "linear-gradient(180deg, #f8fafc, #ffffff)",
+  padding: "7px 12px",
+  background: "#F8FAFC",
+  border: "1px solid #E2E8F0",
+  borderRadius: 11,
+};
+
+const periodControlsStyle = {
+  display: "flex",
+  justifyContent: "center",
+  alignItems: "end",
+  gap: 16,
+  flexWrap: "wrap",
+  marginBottom: 4,
+};
+
+const hoursLayoutStyle = {
+  display: "grid",
+  gridTemplateColumns: "minmax(420px, 1.3fr) minmax(320px, 0.7fr)",
+  gap: 18,
+  alignItems: "start",
+};
+
+const hoursFormPanelStyle = {
+  background: "#f8fafc",
   border: "1px solid #e2e8f0",
-  borderRadius: 12,
-  boxShadow: "inset 0 1px 0 rgba(255, 255, 255, 0.8)",
+  borderRadius: 16,
+  padding: 18,
+};
+
+const hoursSummaryPanelStyle = {
+  background: "linear-gradient(180deg, #eff6ff, #f8fafc)",
+  border: "1px solid #bfdbfe",
+  borderRadius: 16,
+  padding: 18,
+};
+
+const hoursFormGridStyle = {
+  display: "grid",
+  gridTemplateColumns: "1fr",
+  gap: 12,
+};
+
+const hoursInlineRowStyle = {
+  display: "grid",
+  gridTemplateColumns: "minmax(150px, 220px) minmax(140px, 180px)",
+  gap: 12,
+  alignItems: "end",
+};
+
+const sectionTitleStyle = {
+  margin: "0 0 6px",
+  color: "#0f172a",
+  fontSize: 18,
+  letterSpacing: -0.2,
+};
+
+const sectionSubtitleStyle = {
+  margin: "0 0 16px",
+  color: "#64748b",
+  fontSize: 14,
+  lineHeight: 1.45,
+};
+
+const miniCardsGridStyle = {
+  display: "grid",
+  gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
+  gap: 10,
+};
+
+const miniCardStyle = {
+  background: "rgba(255, 255, 255, 0.85)",
+  border: "1px solid #dbeafe",
+  borderRadius: 14,
+  padding: 14,
+  display: "grid",
+  gap: 6,
+  color: "#334155",
 };
 
 const cardsGridStyle = {
@@ -1450,21 +1754,21 @@ const twoColumnsStyle = {
 };
 
 const cardStyle = {
-  background: "rgba(255, 255, 255, 0.96)",
+  background: "rgba(255, 255, 255, 0.94)",
   padding: 20,
-  borderRadius: 20,
-  border: "1px solid rgba(226, 232, 240, 0.95)",
-  boxShadow: "0 14px 30px rgba(15, 23, 42, 0.055)",
+  borderRadius: 18,
+  border: "1px solid #e2e8f0",
+  boxShadow: "0 12px 28px rgba(15, 23, 42, 0.07)",
   transition: "all 0.2s ease",
 };
 
 const boxStyle = {
   background: "rgba(255, 255, 255, 0.96)",
   padding: 22,
-  borderRadius: 20,
-  border: "1px solid rgba(226, 232, 240, 0.95)",
-  marginBottom: 18,
-  boxShadow: "0 14px 32px rgba(15, 23, 42, 0.055)",
+  borderRadius: 18,
+  border: "1px solid #e2e8f0",
+  marginBottom: 20,
+  boxShadow: "0 14px 32px rgba(15, 23, 42, 0.06)",
 };
 
 const inputStyle = {
@@ -1472,30 +1776,27 @@ const inputStyle = {
   boxSizing: "border-box",
   border: "1px solid #cbd5e1",
   borderRadius: 12,
-  padding: "10px 12px",
+  padding: "11px 12px",
   fontSize: 14,
-  background: "#ffffff",
+  background: "white",
   outline: "none",
-  color: "#0f172a",
-  boxShadow: "inset 0 1px 2px rgba(15, 23, 42, 0.035)",
 };
 
 const compactInputStyle = {
   ...inputStyle,
-  minHeight: 40,
-  padding: "8px 12px",
+  minHeight: 42,
+  padding: "9px 12px",
   borderRadius: 11,
 };
 
 const messageStyle = {
-  background: "#eff6ff",
+  background: "white",
   border: "1px solid #bfdbfe",
-  padding: "11px 13px",
+  padding: 12,
   borderRadius: 14,
-  marginBottom: 16,
+  marginBottom: 18,
   color: "#1e3a8a",
-  boxShadow: "0 8px 18px rgba(37, 99, 235, 0.08)",
-  fontSize: 14,
+  boxShadow: "0 4px 12px rgba(37, 99, 235, 0.08)",
 };
 
 const editNoticeStyle = {
@@ -1518,44 +1819,40 @@ const paginationStyle = {
 
 const thStyle = {
   textAlign: "left",
-  borderBottom: "1px solid #e2e8f0",
-  padding: "11px 10px",
-  color: "#475569",
-  background: "#f8fafc",
-  fontWeight: 700,
-  fontSize: 11,
+  borderBottom: "2px solid #e2e8f0",
+  padding: "12px 10px",
+  color: "#334155",
+  fontWeight: 800,
+  fontSize: 12,
   textTransform: "uppercase",
-  letterSpacing: 0.35,
+  letterSpacing: 0.3,
 };
 
 const tdStyle = {
   borderBottom: "1px solid #f1f5f9",
-  padding: "11px 10px",
-  verticalAlign: "middle",
-  color: "#334155",
+  padding: "12px 10px",
+  verticalAlign: "top",
 };
 
 function buttonStyle(active, id, hoveredButton) {
   const isHover = hoveredButton === id;
 
   return {
-    border: active ? "1px solid #bfdbfe" : "1px solid transparent",
-    borderRadius: 13,
-    padding: "9px 14px",
+    border: active ? "1px solid #cbd5e1" : "1px solid #e2e8f0",
+    borderRadius: 14,
+    padding: "10px 16px",
     background: active
-      ? "linear-gradient(135deg, #dbeafe, #eff6ff)"
-      : isHover
-      ? "#ffffff"
-      : "transparent",
-    color: active ? "#1e3a8a" : "#475569",
+      ? "linear-gradient(135deg, #e2e8f0, #cbd5e1)"
+      : "linear-gradient(135deg, #ffffff, #f8fafc)",
+    color: "#1f2937",
     fontWeight: active ? 600 : 500,
-    letterSpacing: "0.05px",
+    letterSpacing: "0.1px",
     cursor: "pointer",
-    boxShadow: isHover || active
-      ? "0 6px 16px rgba(15, 23, 42, 0.08)"
-      : "none",
+    boxShadow: isHover
+      ? "0 6px 16px rgba(15, 23, 42, 0.12)"
+      : "0 2px 6px rgba(15, 23, 42, 0.06)",
     transform: isHover ? "translateY(-1px)" : "translateY(0)",
-    transition: "all 0.18s ease",
+    transition: "all 0.2s ease",
     opacity: 1,
   };
 }
@@ -1565,20 +1862,20 @@ function primaryButtonStyle(id, hoveredButton) {
 
   return {
     border: "1px solid #bfdbfe",
-    borderRadius: 13,
-    padding: "11px 16px",
+    borderRadius: 14,
+    padding: "13px 18px",
     background: isHover
-      ? "linear-gradient(135deg, #bfdbfe, #dbeafe)"
-      : "linear-gradient(135deg, #dbeafe, #eff6ff)",
+      ? "linear-gradient(135deg, #bfdbfe, #93c5fd)"
+      : "linear-gradient(135deg, #dbeafe, #bfdbfe)",
     color: "#1e3a8a",
-    fontWeight: 600,
-    letterSpacing: "0.05px",
+    fontWeight: 500,
+    letterSpacing: "0.1px",
     cursor: "pointer",
     boxShadow: isHover
-      ? "0 10px 20px rgba(37, 99, 235, 0.14)"
-      : "0 6px 14px rgba(37, 99, 235, 0.08)",
+      ? "0 8px 18px rgba(37, 99, 235, 0.14)"
+      : "0 4px 12px rgba(37, 99, 235, 0.08)",
     transform: isHover ? "translateY(-1px)" : "translateY(0)",
-    transition: "all 0.18s ease",
+    transition: "all 0.2s ease",
   };
 }
 
@@ -1587,17 +1884,22 @@ function editButtonStyle(id, hoveredButton, disabled = false) {
 
   return {
     border: "1px solid #bfdbfe",
-    borderRadius: 9,
-    padding: "6px 10px",
-    background: disabled ? "#f8fafc" : isHover ? "#bfdbfe" : "#dbeafe",
+    borderRadius: 10,
+    padding: "7px 11px",
+    background: disabled
+      ? "#f8fafc"
+      : isHover
+      ? "linear-gradient(135deg, #dbeafe, #bfdbfe)"
+      : "#dbeafe",
     color: disabled ? "#94a3b8" : "#1e3a8a",
     cursor: disabled ? "not-allowed" : "pointer",
     fontWeight: 500,
-    fontSize: 12,
-    letterSpacing: "0.05px",
-    boxShadow: isHover ? "0 6px 14px rgba(37, 99, 235, 0.12)" : "none",
+    letterSpacing: "0.1px",
+    boxShadow: isHover
+      ? "0 6px 14px rgba(37, 99, 235, 0.12)"
+      : "0 2px 6px rgba(37, 99, 235, 0.06)",
     transform: isHover ? "translateY(-1px)" : "translateY(0)",
-    transition: "all 0.18s ease",
+    transition: "all 0.2s ease",
     opacity: disabled ? 0.65 : 1,
   };
 }
@@ -1607,17 +1909,22 @@ function deleteButtonStyle(id, hoveredButton, disabled = false) {
 
   return {
     border: "1px solid #fecaca",
-    borderRadius: 9,
-    padding: "6px 10px",
-    background: disabled ? "#f8fafc" : isHover ? "#fecaca" : "#fee2e2",
+    borderRadius: 10,
+    padding: "7px 11px",
+    background: disabled
+      ? "#f8fafc"
+      : isHover
+      ? "linear-gradient(135deg, #fee2e2, #fecaca)"
+      : "#fee2e2",
     color: disabled ? "#94a3b8" : "#991b1b",
     cursor: disabled ? "not-allowed" : "pointer",
     fontWeight: 500,
-    fontSize: 12,
-    letterSpacing: "0.05px",
-    boxShadow: isHover ? "0 6px 14px rgba(153, 27, 27, 0.12)" : "none",
+    letterSpacing: "0.1px",
+    boxShadow: isHover
+      ? "0 6px 14px rgba(153, 27, 27, 0.12)"
+      : "0 2px 6px rgba(153, 27, 27, 0.06)",
     transform: isHover ? "translateY(-1px)" : "translateY(0)",
-    transition: "all 0.18s ease",
+    transition: "all 0.2s ease",
     opacity: disabled ? 0.65 : 1,
   };
 }
@@ -1628,19 +1935,20 @@ function secondaryButtonStyle(id, hoveredButton) {
   return {
     marginTop: 0,
     marginBottom: 12,
-    padding: "8px 12px",
-    borderRadius: 11,
+    padding: "9px 13px",
+    borderRadius: 12,
     border: "1px solid #cbd5e1",
-    background: isHover ? "#f8fafc" : "#ffffff",
+    background: isHover
+      ? "linear-gradient(135deg, #f1f5f9, #e2e8f0)"
+      : "#ffffff",
     color: "#334155",
     cursor: "pointer",
     fontWeight: 500,
-    fontSize: 13,
-    letterSpacing: "0.05px",
+    letterSpacing: "0.1px",
     boxShadow: isHover
-      ? "0 6px 14px rgba(15, 23, 42, 0.08)"
-      : "0 1px 4px rgba(15, 23, 42, 0.04)",
+      ? "0 5px 14px rgba(15, 23, 42, 0.10)"
+      : "0 2px 6px rgba(15, 23, 42, 0.05)",
     transform: isHover ? "translateY(-1px)" : "translateY(0)",
-    transition: "all 0.18s ease",
+    transition: "all 0.2s ease",
   };
 }
