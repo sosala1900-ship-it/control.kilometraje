@@ -907,6 +907,167 @@ export default function App() {
     ventana.document.close();
   }
 
+  function imprimirInformeAsesoriaHoras() {
+    const nombreMes = getNombreMesSeleccionado();
+    const filas = horasPorEmpleadoMes
+      .filter((r) => Number(r.horas || 0) > 0)
+      .map(
+        (r) => `
+          <tr>
+            <td>${escapeHtml(r.empleado)}</td>
+            <td class="horas">${escapeHtml(numero(r.horas))} h</td>
+          </tr>`
+      )
+      .join("");
+
+    const total = horasPorEmpleadoMes.reduce(
+      (acc, r) => acc + Number(r.horas || 0),
+      0
+    );
+
+    const html = `
+      <!doctype html>
+      <html lang="es">
+        <head>
+          <meta charset="utf-8" />
+          <title>Informe horas asesoría - ${escapeHtml(nombreMes)} ${escapeHtml(anio)}</title>
+          <style>
+            * { box-sizing: border-box; }
+            body {
+              margin: 0;
+              padding: 32px;
+              font-family: Arial, sans-serif;
+              color: #0f172a;
+              background: #ffffff;
+            }
+            .documento {
+              max-width: 760px;
+              margin: 0 auto;
+            }
+            .encabezado {
+              border-bottom: 2px solid #0f172a;
+              padding-bottom: 16px;
+              margin-bottom: 24px;
+            }
+            h1 {
+              margin: 0;
+              font-size: 22px;
+              letter-spacing: 0.3px;
+            }
+            .subtitulo {
+              margin-top: 8px;
+              color: #475569;
+              font-size: 14px;
+            }
+            table {
+              width: 100%;
+              border-collapse: collapse;
+              margin-top: 18px;
+              font-size: 14px;
+            }
+            th {
+              text-align: left;
+              background: #f1f5f9;
+              border-bottom: 1px solid #cbd5e1;
+              padding: 11px 10px;
+              text-transform: uppercase;
+              font-size: 12px;
+              letter-spacing: 0.3px;
+            }
+            td {
+              border-bottom: 1px solid #e2e8f0;
+              padding: 11px 10px;
+            }
+            .horas {
+              text-align: right;
+              font-weight: 700;
+            }
+            .total td {
+              border-top: 2px solid #0f172a;
+              border-bottom: none;
+              font-weight: 800;
+              background: #f8fafc;
+            }
+            .nota {
+              margin-top: 18px;
+              font-size: 12px;
+              color: #64748b;
+            }
+            .acciones {
+              display: flex;
+              justify-content: flex-end;
+              gap: 10px;
+              margin-bottom: 20px;
+            }
+            button {
+              border: none;
+              border-radius: 10px;
+              padding: 10px 14px;
+              font-weight: 500;
+              cursor: pointer;
+              background: #dbeafe;
+              color: #1e3a8a;
+              border: 1px solid #bfdbfe;
+            }
+            @media print {
+              body { padding: 0; }
+              .acciones { display: none; }
+              .documento { max-width: none; }
+            }
+          </style>
+        </head>
+        <body>
+          <div class="documento">
+            <div class="acciones">
+              <button onclick="window.print()">Imprimir / guardar como PDF</button>
+            </div>
+
+            <div class="encabezado">
+              <h1>FUNDACIÓN CANARIA IMAGINE 2050</h1>
+              <div class="subtitulo">Horas complementarias · ${escapeHtml(nombreMes)} ${escapeHtml(anio)}</div>
+            </div>
+
+            <table>
+              <thead>
+                <tr>
+                  <th>Empleado</th>
+                  <th style="text-align:right;">Horas</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${filas || `<tr><td colspan="2">No hay empleados con horas complementarias en este periodo.</td></tr>`}
+                <tr class="total">
+                  <td>Total</td>
+                  <td class="horas">${escapeHtml(numero(total))} h</td>
+                </tr>
+              </tbody>
+            </table>
+
+            <div class="nota">Documento generado desde la app interna de control de kilometraje y horas complementarias.</div>
+          </div>
+
+          <script>
+            window.onload = function () {
+              window.focus();
+              window.print();
+            };
+          </script>
+        </body>
+      </html>
+    `;
+
+    const ventana = window.open("", "_blank", "width=900,height=700");
+
+    if (!ventana) {
+      setMensaje("El navegador ha bloqueado la ventana de impresión. Permite ventanas emergentes para esta app.");
+      return;
+    }
+
+    ventana.document.open();
+    ventana.document.write(html);
+    ventana.document.close();
+  }
+
   const registrosMes = useMemo(() => {
     return registros.filter(
       (r) => getMonth(r.fecha) === mes && getYear(r.fecha) === anio
@@ -1272,6 +1433,17 @@ export default function App() {
                 </div>
               </div>
             </Box>
+
+            <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 14 }}>
+              <button
+                onClick={imprimirInformeAsesoriaHoras}
+                onMouseEnter={() => setHoveredButton("exportar-pdf-asesoria-horas")}
+                onMouseLeave={() => setHoveredButton(null)}
+                style={primaryButtonStyle("exportar-pdf-asesoria-horas", hoveredButton)}
+              >
+                Exportar PDF Asesoría Horas
+              </button>
+            </div>
 
             <Box title="Horas por empleado para asesoría">
               <Table
