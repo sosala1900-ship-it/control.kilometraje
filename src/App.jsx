@@ -1595,7 +1595,7 @@ function Table({ headers, rows, alignments = [] }) {
 
   return (
     <div style={{ overflowX: "auto" }}>
-      <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 14, tableLayout: "fixed" }}>
+      <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 14,  }}>
         <thead>
           <tr>
             {headers.map((h, index) => (
@@ -1873,6 +1873,7 @@ const tdStyle = {
   borderBottom: "1px solid #f1f5f9",
   padding: "12px 10px",
   verticalAlign: "top",
+  wordBreak: "break-word",
 };
 
 function buttonStyle(active, id, hoveredButton) {
