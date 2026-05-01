@@ -639,6 +639,7 @@ export default function App() {
         fecha: "",
         empleadoId: "",
         proyectoId: "",
+        origen: "",
         destino: "",
         km: "",
         observaciones: "",
