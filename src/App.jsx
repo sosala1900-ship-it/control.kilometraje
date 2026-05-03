@@ -1167,6 +1167,19 @@ export default function App() {
             <Box title="Horas por empleado para asesoría"><button onClick={imprimirInformeAsesoriaHoras} onMouseEnter={() => setHoveredButton("exportar-pdf-asesoria-horas")} onMouseLeave={() => setHoveredButton(null)} style={{ ...primaryButtonStyle("exportar-pdf-asesoria-horas", hoveredButton), marginBottom: 14 }}>Exportar PDF Asesoría Horas</button><Table headers={["Empleado", "Horas"]} alignments={["left", "right"]} rows={horasPorEmpleadoMes.filter((r) => Number(r.horas || 0) > 0).map((r) => [r.empleado, `${numero(r.horas)} h`])} /></Box>
             <Box title="Horas por proyecto"><Table headers={["Proyecto", "Horas", "Registros"]} alignments={["left", "right", "center"]} rows={horasPorProyectoMes.map((r) => [<ProjectBadge key={r.proyectoId} proyectoId={r.proyectoId} proyecto={r.proyecto} />, `${numero(r.horas)} h`, r.registros])} /></Box>
             <Box title="Últimos registros de horas"><Table headers={["Fecha", "Empleado", "Proyecto", "Horas", "Observaciones"]} alignments={["left", "left", "left", "right", "left"]} rows={ultimasHoras.map((r) => [formatDate(r.fecha), r.empleado, <ProjectBadge key={r.idRegistro || r.id} proyectoId={r.proyectoId} proyecto={r.proyecto} />, `${numero(r.horas)} h`, r.observaciones || ""])} /></Box>
+            <Box title="Histórico de horas">
+              <Table
+                headers={["Fecha", "Empleado", "Proyecto", "Horas", "Observaciones"]}
+                alignments={["left", "left", "left", "right", "left"]}
+                rows={horasComplementariasVisibles.map((r) => [
+                  formatDate(r.fecha),
+                  r.empleado,
+                  <ProjectBadge key={r.idRegistro || r.id} proyectoId={r.proyectoId} proyecto={r.proyecto} />,
+                  `${numero(r.horas)} h`,
+                  <span style={observacionesHistoricoStyle}>{r.observaciones || ""}</span>,
+                ])}
+              />
+            </Box>
           </>
         )}
 
@@ -1568,6 +1581,8 @@ const editNoticeStyle = { background: "#eff6ff", border: "1px solid #bfdbfe", co
 const paginationStyle = { display: "flex", justifyContent: "center", alignItems: "center", gap: 12, marginTop: 16 };
 const thStyle = { textAlign: "left", borderBottom: "2px solid #e2e8f0", padding: "12px 10px", color: "#334155", fontWeight: 800, fontSize: 12, textTransform: "uppercase", letterSpacing: 0.3 };
 const tdStyle = { borderBottom: "1px solid #f1f5f9", padding: "12px 10px", verticalAlign: "top", wordBreak: "break-word" };
+
+const observacionesHistoricoStyle = { display: "inline-block", maxWidth: 360, color: "#64748b", fontSize: 13, lineHeight: 1.4 };
 
 function buttonStyle(active, id, hoveredButton) {
   const isHover = hoveredButton === id;
