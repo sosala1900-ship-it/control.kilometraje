@@ -5,7 +5,10 @@ const API_URL =
   "https://script.google.com/macros/s/AKfycbzEWeK1VVLAWXknILQZxoY8I-AfauaWKpKUDYtWaTPw12LrnmxNKgHk_lw_uZMpbDaBIg/exec";
 
 const ACCESS_PASSWORD = "imagine2026";
+const ADMIN_PASSWORD = "imagineAdmin2026";
 const ACCESS_STORAGE_KEY = "km_app_access_ok";
+const ACCESS_MODE_STORAGE_KEY = "km_app_access_mode";
+const ACCESS_EMPLOYEE_STORAGE_KEY = "km_app_employee_id";
 
 const PRECIO_KM = 0.26;
 const REGISTROS_POR_PAGINA = 20;
@@ -360,6 +363,22 @@ export default function App() {
   });
   const [passwordAcceso, setPasswordAcceso] = useState("");
   const [errorAcceso, setErrorAcceso] = useState("");
+  const [modoAcceso, setModoAcceso] = useState(() => {
+    try {
+      return localStorage.getItem(ACCESS_MODE_STORAGE_KEY) || "";
+    } catch {
+      return "";
+    }
+  });
+  const [empleadoSesionId, setEmpleadoSesionId] = useState(() => {
+    try {
+      return localStorage.getItem(ACCESS_EMPLOYEE_STORAGE_KEY) || "";
+    } catch {
+      return "";
+    }
+  });
+  const [passwordAdmin, setPasswordAdmin] = useState("");
+  const [errorAdmin, setErrorAdmin] = useState("");
 
   const [tab, setTab] = useState("dashboard");
   const [registros, setRegistros] = useState([]);
@@ -403,6 +422,27 @@ export default function App() {
     observaciones: "",
   });
 
+  const esAdmin = modoAcceso === "admin";
+  const esEmpleado = modoAcceso === "empleado";
+  const empleadoSesion = empleadosApp.find((e) => e.id === empleadoSesionId);
+
+  const tabsVisibles = esEmpleado
+    ? [
+        { id: "dashboard", label: "Mi resumen" },
+        { id: "registro", label: "Nuevo registro" },
+        { id: "horas", label: "Horas complementarias" },
+        { id: "historico", label: "Mi histórico" },
+      ]
+    : tabs;
+
+  const registrosVisibles = esEmpleado
+    ? registros.filter((r) => r.empleadoId === empleadoSesionId)
+    : registros;
+
+  const horasComplementariasVisibles = esEmpleado
+    ? horasComplementarias.filter((r) => r.empleadoId === empleadoSesionId)
+    : horasComplementarias;
+
   const empleadoSeleccionado = empleadosApp.find((e) => e.id === form.empleadoId);
   const precioKmAplicado = empleadoSeleccionado ? empleadoSeleccionado.precioKm || PRECIO_KM : PRECIO_KM;
   const importe = form.km ? Number(form.km || 0) * precioKmAplicado : 0;
@@ -410,6 +450,13 @@ export default function App() {
   useEffect(() => {
     if (accesoAutorizado) cargarDatos();
   }, [accesoAutorizado]);
+
+  useEffect(() => {
+    if (!esEmpleado || !empleadoSesionId) return;
+
+    setForm((prev) => ({ ...prev, empleadoId: empleadoSesionId }));
+    setFormHoras((prev) => ({ ...prev, empleadoId: empleadoSesionId }));
+  }, [esEmpleado, empleadoSesionId]);
 
   function accederApp(e) {
     e.preventDefault();
@@ -425,13 +472,69 @@ export default function App() {
     setAccesoAutorizado(true);
   }
 
+  function seleccionarEmpleado(empleadoId) {
+    if (!empleadoId) return;
+
+    try {
+      localStorage.setItem(ACCESS_MODE_STORAGE_KEY, "empleado");
+      localStorage.setItem(ACCESS_EMPLOYEE_STORAGE_KEY, empleadoId);
+    } catch {}
+
+    setModoAcceso("empleado");
+    setEmpleadoSesionId(empleadoId);
+    setForm((prev) => ({ ...prev, empleadoId }));
+    setFormHoras((prev) => ({ ...prev, empleadoId }));
+    setTab("dashboard");
+    setMensaje("");
+  }
+
+  function accederComoAdmin(e) {
+    e.preventDefault();
+
+    if (passwordAdmin.trim() !== ADMIN_PASSWORD) {
+      setErrorAdmin("Contraseña de administrador incorrecta.");
+      return;
+    }
+
+    try {
+      localStorage.setItem(ACCESS_MODE_STORAGE_KEY, "admin");
+      localStorage.removeItem(ACCESS_EMPLOYEE_STORAGE_KEY);
+    } catch {}
+
+    setModoAcceso("admin");
+    setEmpleadoSesionId("");
+    setPasswordAdmin("");
+    setErrorAdmin("");
+    setTab("dashboard");
+    setMensaje("");
+  }
+
+  function cambiarUsuario() {
+    try {
+      localStorage.removeItem(ACCESS_MODE_STORAGE_KEY);
+      localStorage.removeItem(ACCESS_EMPLOYEE_STORAGE_KEY);
+    } catch {}
+
+    setModoAcceso("");
+    setEmpleadoSesionId("");
+    setRegistroEditando(null);
+    setTab("dashboard");
+    setMensaje("");
+  }
+
   function cerrarSesion() {
     try {
       localStorage.removeItem(ACCESS_STORAGE_KEY);
+      localStorage.removeItem(ACCESS_MODE_STORAGE_KEY);
+      localStorage.removeItem(ACCESS_EMPLOYEE_STORAGE_KEY);
     } catch {}
     setAccesoAutorizado(false);
+    setModoAcceso("");
+    setEmpleadoSesionId("");
     setPasswordAcceso("");
+    setPasswordAdmin("");
     setErrorAcceso("");
+    setErrorAdmin("");
     setMensaje("");
   }
 
@@ -534,7 +637,7 @@ export default function App() {
         ...prev,
       ]);
 
-      setFormHoras({ fecha: "", empleadoId: "", proyectoId: "", horas: "", observaciones: "" });
+      setFormHoras({ fecha: "", empleadoId: esEmpleado ? empleadoSesionId : "", proyectoId: "", horas: "", observaciones: "" });
       setMensaje("Horas complementarias guardadas correctamente.");
       cargarDatos();
     } catch (error) {
@@ -604,7 +707,7 @@ export default function App() {
         setMensaje("Registro guardado correctamente.");
       }
 
-      setForm({ fecha: "", empleadoId: "", proyectoId: "", origen: "", destino: "", km: "", observaciones: "" });
+      setForm({ fecha: "", empleadoId: esEmpleado ? empleadoSesionId : "", proyectoId: "", origen: "", destino: "", km: "", observaciones: "" });
       setTab("dashboard");
     } catch (error) {
       console.error(error);
@@ -637,7 +740,7 @@ export default function App() {
   function cancelarEdicion(e) {
     if (e && typeof e.preventDefault === "function") e.preventDefault();
     setRegistroEditando(null);
-    setForm({ fecha: "", empleadoId: "", proyectoId: "", origen: "", destino: "", km: "", observaciones: "" });
+    setForm({ fecha: "", empleadoId: esEmpleado ? empleadoSesionId : "", proyectoId: "", origen: "", destino: "", km: "", observaciones: "" });
     setMensaje("Edición cancelada. Has vuelto al histórico.");
     setPaginaHistorico(1);
     setTab("historico");
@@ -726,8 +829,8 @@ export default function App() {
     ventana.document.close();
   }
 
-  const registrosMes = useMemo(() => registros.filter((r) => getMonth(r.fecha) === mes && getYear(r.fecha) === anio), [registros, mes, anio]);
-  const horasMes = useMemo(() => horasComplementarias.filter((r) => getMonth(r.fecha) === mes && getYear(r.fecha) === anio), [horasComplementarias, mes, anio]);
+  const registrosMes = useMemo(() => registrosVisibles.filter((r) => getMonth(r.fecha) === mes && getYear(r.fecha) === anio), [registrosVisibles, mes, anio]);
+  const horasMes = useMemo(() => horasComplementariasVisibles.filter((r) => getMonth(r.fecha) === mes && getYear(r.fecha) === anio), [horasComplementariasVisibles, mes, anio]);
   const totalHorasMes = useMemo(() => horasMes.reduce((acc, r) => acc + Number(r.horas || 0), 0), [horasMes]);
 
   const horasPorEmpleadoMes = useMemo(() => {
@@ -752,22 +855,22 @@ export default function App() {
     return Object.values(map).sort((a, b) => b.horas - a.horas);
   }, [horasMes]);
 
-  const ultimasHoras = useMemo(() => horasComplementarias.slice(0, 8), [horasComplementarias]);
+  const ultimasHoras = useMemo(() => horasComplementariasVisibles.slice(0, 8), [horasComplementariasVisibles]);
   const totalesMes = useMemo(() => calcularTotales(registrosMes), [registrosMes]);
   const porEmpleadoMes = useMemo(() => agruparPorEmpleado(registrosMes), [registrosMes]);
   const informeAsesoria = useMemo(() => porEmpleadoMes.filter((r) => Number(r.importe || 0) > 0), [porEmpleadoMes]);
   const porProyectoMes = useMemo(() => agruparPorProyecto(registrosMes), [registrosMes]);
-  const acumuladoPorProyecto = useMemo(() => agruparPorProyecto(registros), [registros]);
+  const acumuladoPorProyecto = useMemo(() => agruparPorProyecto(registrosVisibles), [registrosVisibles]);
 
   const historicoFiltrado = useMemo(() => {
-    return registros.filter((r) => {
+    return registrosVisibles.filter((r) => {
       if (filtrosHistorico.mes && getMonth(r.fecha) !== filtrosHistorico.mes) return false;
       if (filtrosHistorico.anio && getYear(r.fecha) !== filtrosHistorico.anio) return false;
       if (filtrosHistorico.empleadoId && r.empleadoId !== filtrosHistorico.empleadoId) return false;
       if (filtrosHistorico.proyectoId && r.proyectoId !== filtrosHistorico.proyectoId) return false;
       return true;
     });
-  }, [registros, filtrosHistorico]);
+  }, [registrosVisibles, filtrosHistorico]);
 
   const totalPaginasHistorico = Math.max(1, Math.ceil(historicoFiltrado.length / REGISTROS_POR_PAGINA));
   const registrosHistoricoPagina = useMemo(() => {
@@ -803,17 +906,71 @@ export default function App() {
     );
   }
 
+  if (!modoAcceso) {
+    return (
+      <div style={loginPageStyle}>
+        <div style={loginCardStyle}>
+          <div style={loginIconStyle}>👤</div>
+          <h1 style={loginTitleStyle}>Selecciona usuario</h1>
+          <p style={loginSubtitleStyle}>Elige tu nombre para ver solo tus registros. El acceso de administrador está separado.</p>
+
+          {mensaje && <div style={messageStyle}>{mensaje}</div>}
+
+          <label style={{ display: "grid", gap: 8 }}>
+            <span style={{ fontSize: 13, fontWeight: 600, color: "#334155" }}>Empleado</span>
+            <select
+              value=""
+              onChange={(e) => seleccionarEmpleado(e.target.value)}
+              style={loginInputStyle}
+              disabled={cargando || empleadosApp.length === 0}
+            >
+              <option value="">{cargando ? "Cargando empleados..." : "Selecciona empleado"}</option>
+              {empleadosApp.map((e) => (
+                <option key={e.id} value={e.id}>{e.nombre}</option>
+              ))}
+            </select>
+          </label>
+
+          <form onSubmit={accederComoAdmin} style={{ display: "grid", gap: 10, marginTop: 6 }}>
+            <label style={{ display: "grid", gap: 8 }}>
+              <span style={{ fontSize: 13, fontWeight: 600, color: "#334155" }}>Acceso administrador</span>
+              <input
+                type="password"
+                value={passwordAdmin}
+                onChange={(e) => {
+                  setPasswordAdmin(e.target.value);
+                  setErrorAdmin("");
+                }}
+                placeholder="Contraseña de administrador"
+                style={loginInputStyle}
+              />
+            </label>
+            {errorAdmin && <div style={loginErrorStyle}>{errorAdmin}</div>}
+            <button type="submit" style={loginButtonStyle}>Entrar como administrador</button>
+          </form>
+
+          <button type="button" onClick={cerrarSesion} style={secondaryButtonStyle("volver-login", hoveredButton)}>
+            Salir
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div style={pageStyle}>
       <div style={containerStyle}>
         <header style={headerStyle}>
           <div>
             <h1 style={{ margin: "0", fontSize: 34, letterSpacing: -0.5 }}>Control de Kilometraje</h1>
-            <p style={{ color: "#64748b", marginTop: 6 }}>Dashboard mensual, histórico y control acumulado por proyecto.</p>
+            <p style={{ color: "#64748b", marginTop: 6 }}>{esEmpleado ? `Vista personal de ${empleadoSesion?.nombre || "empleado"}.` : "Dashboard mensual, histórico y control acumulado por proyecto."}</p>
           </div>
           <div style={{ display: "flex", gap: 10, flexWrap: "wrap", justifyContent: "flex-end" }}>
             <button onClick={cargarDatos} disabled={cargando} onMouseEnter={() => setHoveredButton("actualizar")} onMouseLeave={() => setHoveredButton(null)} style={buttonStyle(false, "actualizar", hoveredButton)}>
               {cargando ? "Cargando..." : "Actualizar datos"}
+            </button>
+            <button onClick={cambiarUsuario} onMouseEnter={() => setHoveredButton("cambiar-usuario")} onMouseLeave={() => setHoveredButton(null)} style={secondaryButtonStyle("cambiar-usuario", hoveredButton)}>
+              Cambiar usuario
             </button>
             <button onClick={cerrarSesion} onMouseEnter={() => setHoveredButton("cerrar-sesion")} onMouseLeave={() => setHoveredButton(null)} style={secondaryButtonStyle("cerrar-sesion", hoveredButton)}>
               Cerrar acceso
@@ -822,7 +979,7 @@ export default function App() {
         </header>
 
         <nav style={navStyle}>
-          {tabs.map((item) => (
+          {tabsVisibles.map((item) => (
             <button key={item.id} onClick={() => setTab(item.id)} onMouseEnter={() => setHoveredButton(item.id)} onMouseLeave={() => setHoveredButton(null)} style={buttonStyle(tab === item.id, item.id, hoveredButton)}>
               {item.label}
             </button>
@@ -862,10 +1019,10 @@ export default function App() {
               <Card title="Importe del mes" value={euros(totalesMes.importe)} accent="#fed7aa" />
             </div>
             <div style={twoColumnsStyle}>
-              <Box title="Resumen mensual por proyecto">
+              <Box title={esEmpleado ? "Mis km por proyecto" : "Resumen mensual por proyecto"}>
                 <Table headers={["Proyecto", "Km", "Importe", "Registros"]} rows={porProyectoMes.map((r) => [<ProjectBadge key={r.proyectoId} proyectoId={r.proyectoId} proyecto={r.proyecto} />, numero(r.km), euros(r.importe), r.registros])} />
               </Box>
-              <Box title="Resumen mensual por empleado">
+              <Box title={esEmpleado ? "Mi resumen del mes" : "Resumen mensual por empleado"}>
                 <Table headers={["Empleado", "Km", "Importe", "Registros"]} rows={porEmpleadoMes.map((r) => [r.empleado, numero(r.km), euros(r.importe), r.registros])} />
               </Box>
             </div>
@@ -878,7 +1035,7 @@ export default function App() {
             <div style={registroFormGridStyle}>
               <div style={registroTwoColumnsStyle}>
                 <Field label="Fecha"><input type="date" name="fecha" value={form.fecha} onChange={handleChange} style={compactInputStyle} /></Field>
-                <Field label="Empleado"><select name="empleadoId" value={form.empleadoId} onChange={handleChange} style={compactInputStyle}><option value="">Selecciona empleado</option>{empleadosApp.map((e) => <option key={e.id} value={e.id}>{e.nombre}</option>)}</select></Field>
+                <Field label="Empleado"><select name="empleadoId" value={form.empleadoId} onChange={handleChange} disabled={esEmpleado} style={compactInputStyle}><option value="">Selecciona empleado</option>{(esEmpleado && empleadoSesion ? [empleadoSesion] : empleadosApp).map((e) => <option key={e.id} value={e.id}>{e.nombre}</option>)}</select></Field>
               </div>
               <Field label="Proyecto" full><select name="proyectoId" value={form.proyectoId} onChange={handleChange} style={compactInputStyle}><option value="">Selecciona proyecto</option>{proyectosApp.filter((p) => esActivo(p.activo)).map((p) => <option key={p.id} value={p.id}>{p.nombre}</option>)}</select></Field>
               <div style={registroEqualTwoColumnsStyle}>
@@ -886,7 +1043,7 @@ export default function App() {
                 <Field label="Destino"><input name="destino" value={form.destino} onChange={handleChange} placeholder="Ej. La Laguna" style={compactInputStyle} /></Field>
               </div>
               <div style={registroKmResumenStyle}>
-                <Field label="Km ida y vuelta"><input type="number" name="km" value={form.km} onChange={handleChange} placeholder="Ej. 42" style={compactInputStyle} /></Field>
+                <Field label="Km totales (ida y vuelta)"><input type="number" name="km" value={form.km} onChange={handleChange} placeholder="Ej. 42" style={compactInputStyle} /></Field>
                 <div style={resumenCalculoStyle}><div style={{ fontSize: 12, color: "#64748B", marginBottom: 4 }}>Precio/Km</div><strong style={{ color: "#334155", fontWeight: 500 }}>{`${numero(precioKmAplicado)} €/km`}</strong></div>
                 <div style={resumenCalculoStyle}><div style={{ fontSize: 12, color: "#64748B", marginBottom: 4 }}>Importe</div><strong style={{ color: "#334155", fontWeight: 500 }}>{euros(importe)}</strong></div>
               </div>
@@ -909,7 +1066,7 @@ export default function App() {
                   <div style={hoursFormGridStyle}>
                     <div style={registroTwoColumnsStyle}>
                       <Field label="Fecha"><input type="date" name="fecha" value={formHoras.fecha} onChange={handleHorasChange} style={compactInputStyle} /></Field>
-                      <Field label="Empleado"><select name="empleadoId" value={formHoras.empleadoId} onChange={handleHorasChange} style={compactInputStyle}><option value="">Selecciona empleado</option>{empleadosApp.map((e) => <option key={e.id} value={e.id}>{e.nombre}</option>)}</select></Field>
+                      <Field label="Empleado"><select name="empleadoId" value={formHoras.empleadoId} onChange={handleHorasChange} disabled={esEmpleado} style={compactInputStyle}><option value="">Selecciona empleado</option>{(esEmpleado && empleadoSesion ? [empleadoSesion] : empleadosApp).map((e) => <option key={e.id} value={e.id}>{e.nombre}</option>)}</select></Field>
                     </div>
                     <Field label="Proyecto" full><select name="proyectoId" value={formHoras.proyectoId} onChange={handleHorasChange} style={compactInputStyle}><option value="">Selecciona proyecto</option>{proyectosApp.filter((p) => esActivo(p.activo)).map((p) => <option key={p.id} value={p.id}>{p.nombre}</option>)}</select></Field>
                     <div style={hoursInlineRowStyle}>
@@ -927,8 +1084,8 @@ export default function App() {
                 </div>
               </div>
             </Box>
-            <Box title="Horas por empleado para asesoría">
-              <button onClick={imprimirInformeAsesoriaHoras} onMouseEnter={() => setHoveredButton("exportar-pdf-asesoria-horas")} onMouseLeave={() => setHoveredButton(null)} style={{ ...primaryButtonStyle("exportar-pdf-asesoria-horas", hoveredButton), marginBottom: 14 }}>Exportar PDF Asesoría Horas</button>
+            <Box title={esEmpleado ? "Mis horas del mes" : "Horas por empleado para asesoría"}>
+              {!esEmpleado && <button onClick={imprimirInformeAsesoriaHoras} onMouseEnter={() => setHoveredButton("exportar-pdf-asesoria-horas")} onMouseLeave={() => setHoveredButton(null)} style={{ ...primaryButtonStyle("exportar-pdf-asesoria-horas", hoveredButton), marginBottom: 14 }}>Exportar PDF Asesoría Horas</button>}
               <Table headers={["Empleado", "Horas"]} alignments={["left", "right"]} rows={horasPorEmpleadoMes.filter((r) => Number(r.horas || 0) > 0).map((r) => [r.empleado, `${numero(r.horas)} h`])} />
             </Box>
             <Box title="Horas por proyecto"><Table headers={["Proyecto", "Horas", "Registros"]} alignments={["left", "right", "center"]} rows={horasPorProyectoMes.map((r) => [<ProjectBadge key={r.proyectoId} proyectoId={r.proyectoId} proyecto={r.proyecto} />, `${numero(r.horas)} h`, r.registros])} /></Box>
@@ -977,11 +1134,11 @@ export default function App() {
         {tab === "acumulado" && <Box title="Acumulado por proyecto"><Table headers={["Proyecto", "Km acumulados", "Importe acumulado", "Registros"]} rows={acumuladoPorProyecto.map((r) => [<ProjectBadge key={r.proyectoId} proyectoId={r.proyectoId} proyecto={r.proyecto} />, numero(r.km), euros(r.importe), r.registros])} /></Box>}
 
         {tab === "historico" && (
-          <Box title="Histórico de registros">
+          <Box title={esEmpleado ? "Mi histórico" : "Histórico de registros"}>
             <div style={gridFiltersStyle}>
               <Field label="Mes"><select value={filtrosHistorico.mes} onChange={(e) => cambiarFiltroHistorico("mes", e.target.value)} style={compactInputStyle}><option value="">Todos</option>{meses.map((m) => <option key={m.value} value={m.value}>{m.label}</option>)}</select></Field>
               <Field label="Año"><select value={filtrosHistorico.anio} onChange={(e) => cambiarFiltroHistorico("anio", e.target.value)} style={compactInputStyle}><option value="">Todos</option><option value="2026">2026</option><option value="2027">2027</option><option value="2028">2028</option></select></Field>
-              <Field label="Empleado"><select value={filtrosHistorico.empleadoId} onChange={(e) => cambiarFiltroHistorico("empleadoId", e.target.value)} style={compactInputStyle}><option value="">Todos</option>{empleadosApp.map((e) => <option key={e.id} value={e.id}>{e.nombre}</option>)}</select></Field>
+              {!esEmpleado && <Field label="Empleado"><select value={filtrosHistorico.empleadoId} onChange={(e) => cambiarFiltroHistorico("empleadoId", e.target.value)} style={compactInputStyle}><option value="">Todos</option>{empleadosApp.map((e) => <option key={e.id} value={e.id}>{e.nombre}</option>)}</select></Field>}
               <Field label="Proyecto"><select value={filtrosHistorico.proyectoId} onChange={(e) => cambiarFiltroHistorico("proyectoId", e.target.value)} style={compactInputStyle}><option value="">Todos</option>{proyectosApp.map((p) => <option key={p.id} value={p.id}>{p.nombre}</option>)}</select></Field>
             </div>
             <button onClick={limpiarFiltrosHistorico} onMouseEnter={() => setHoveredButton("limpiar-filtros")} onMouseLeave={() => setHoveredButton(null)} style={secondaryButtonStyle("limpiar-filtros", hoveredButton)}>Limpiar filtros</button>
