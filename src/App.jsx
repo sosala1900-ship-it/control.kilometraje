@@ -831,7 +831,7 @@ export default function App() {
 
         {mensaje && <div style={messageStyle}>{mensaje}</div>}
 
-        {(tab === "dashboard" || tab === "informe" || tab === "horas") && (
+        {(tab === "dashboard" || tab === "horas") && (
           <Box title="Periodo de trabajo">
             <div style={periodControlsStyle}>
               <div style={{ width: 180 }}>
@@ -881,7 +881,7 @@ export default function App() {
                 <Field label="Empleado"><select name="empleadoId" value={form.empleadoId} onChange={handleChange} style={compactInputStyle}><option value="">Selecciona empleado</option>{empleadosApp.map((e) => <option key={e.id} value={e.id}>{e.nombre}</option>)}</select></Field>
               </div>
               <Field label="Proyecto" full><select name="proyectoId" value={form.proyectoId} onChange={handleChange} style={compactInputStyle}><option value="">Selecciona proyecto</option>{proyectosApp.filter((p) => esActivo(p.activo)).map((p) => <option key={p.id} value={p.id}>{p.nombre}</option>)}</select></Field>
-              <div style={registroTwoColumnsStyle}>
+              <div style={registroEqualTwoColumnsStyle}>
                 <Field label="Origen"><input name="origen" value={form.origen} onChange={handleChange} placeholder="Ej. Santa Cruz" style={compactInputStyle} /></Field>
                 <Field label="Destino"><input name="destino" value={form.destino} onChange={handleChange} placeholder="Ej. La Laguna" style={compactInputStyle} /></Field>
               </div>
@@ -938,10 +938,33 @@ export default function App() {
 
         {tab === "informe" && (
           <>
-            <Box title="Informe mensual">
-              <p>Total km: <strong>{numero(totalesMes.km)} km</strong></p>
-              <p>Importe total: <strong>{euros(totalesMes.importe)}</strong></p>
-            </Box>
+            <div style={informeTopGridStyle}>
+              <Box title="Periodo de trabajo">
+                <div style={periodControlsStyle}>
+                  <div style={{ width: 180 }}>
+                    <Field label="Mes">
+                      <select value={mes} onChange={(e) => setMes(e.target.value)} style={compactInputStyle}>
+                        {meses.map((m) => <option key={m.value} value={m.value}>{m.label}</option>)}
+                      </select>
+                    </Field>
+                  </div>
+                  <div style={{ width: 120 }}>
+                    <Field label="Año">
+                      <select value={anio} onChange={(e) => setAnio(e.target.value)} style={compactInputStyle}>
+                        <option value="2026">2026</option>
+                        <option value="2027">2027</option>
+                        <option value="2028">2028</option>
+                      </select>
+                    </Field>
+                  </div>
+                </div>
+              </Box>
+
+              <Box title="Informe mensual">
+                <p>Total km: <strong>{numero(totalesMes.km)} km</strong></p>
+                <p>Importe total: <strong>{euros(totalesMes.importe)}</strong></p>
+              </Box>
+            </div>
             <Box title="Resumen por proyecto"><Table headers={["Proyecto", "Km", "Importe", "Registros"]} rows={porProyectoMes.map((r) => [<ProjectBadge key={r.proyectoId} proyectoId={r.proyectoId} proyecto={r.proyecto} />, numero(r.km), euros(r.importe), r.registros])} /></Box>
             <Box title="Resumen por empleado"><Table headers={["Empleado", "Km", "Importe", "Registros"]} rows={porEmpleadoMes.map((r) => [r.empleado, numero(r.km), euros(r.importe), r.registros])} /></Box>
             <Box title="Resumen para asesoría">
@@ -1007,6 +1030,8 @@ const navStyle = { display: "flex", gap: 8, marginBottom: 20, flexWrap: "wrap" }
 const gridFiltersStyle = { display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 12, marginBottom: 16 };
 const registroFormGridStyle = { display: "grid", gridTemplateColumns: "1fr", gap: 12, maxWidth: 880, margin: "0 auto", alignItems: "start" };
 const registroTwoColumnsStyle = { display: "grid", gridTemplateColumns: "minmax(180px, 260px) minmax(260px, 1fr)", gap: 12 };
+const registroEqualTwoColumnsStyle = { display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: 12 };
+const informeTopGridStyle = { display: "grid", gridTemplateColumns: "minmax(360px, 1fr) minmax(360px, 1fr)", gap: 18, alignItems: "stretch" };
 const registroKmResumenStyle = { display: "grid", gridTemplateColumns: "minmax(160px, 220px) minmax(150px, 1fr) minmax(150px, 1fr)", gap: 12, alignItems: "end" };
 const resumenCalculoStyle = { minHeight: 42, boxSizing: "border-box", padding: "7px 12px", background: "#F8FAFC", border: "1px solid #E2E8F0", borderRadius: 11 };
 const periodControlsStyle = { display: "flex", justifyContent: "center", alignItems: "end", gap: 16, flexWrap: "wrap", marginBottom: 4 };
