@@ -957,15 +957,15 @@ export default function App() {
           </div>
 
           <div>
-            <h1 style={loginTitleStyle}>Selecciona tu perfil</h1>
-            <p style={loginSubtitleStyle}>El empleado solo verá sus registros. El acceso administrador queda protegido con una segunda contraseña.</p>
+            <h1 style={loginTitleStyle}>Acceso de usuario</h1>
+            <p style={loginSubtitleStyle}>Selecciona tu nombre para continuar. El panel de administración está separado y protegido.</p>
           </div>
 
           {mensaje && <div style={messageStyle}>{mensaje}</div>}
 
           <div style={employeeAccessPanelStyle}>
             <label style={{ display: "grid", gap: 8 }}>
-              <span style={{ fontSize: 13, fontWeight: 700, color: "#334155" }}>Entrar como empleado</span>
+              <span style={{ fontSize: 13, fontWeight: 700, color: "#334155" }}>Empleado</span>
               <select
                 value=""
                 onChange={(e) => seleccionarEmpleado(e.target.value)}
@@ -994,7 +994,7 @@ export default function App() {
                   setPasswordAdmin(e.target.value);
                   setErrorAdmin("");
                 }}
-                placeholder="Introduce la clave admin"
+                placeholder="Contraseña de administrador"
                 style={loginInputStyle}
               />
             </label>
@@ -1223,23 +1223,23 @@ function Table({ headers, rows, alignments = [] }) {
 }
 
 const pageStyle = { minHeight: "100vh", background: "linear-gradient(180deg, #f8fafc 0%, #eef2ff 100%)", padding: 24, fontFamily: "Arial, sans-serif", color: "#0f172a" };
-const loginPageStyle = { minHeight: "100vh", display: "grid", placeItems: "center", position: "relative", overflow: "hidden", background: "radial-gradient(circle at top left, #dbeafe 0, transparent 34%), radial-gradient(circle at bottom right, #ccfbf1 0, transparent 30%), linear-gradient(135deg, #f8fafc 0%, #eef2ff 100%)", padding: 24, fontFamily: "Arial, sans-serif", color: "#0f172a" };
-const loginCardStyle = { width: "100%", maxWidth: 460, position: "relative", zIndex: 1, background: "rgba(255, 255, 255, 0.88)", backdropFilter: "blur(18px)", border: "1px solid rgba(255, 255, 255, 0.72)", borderRadius: 28, padding: 30, boxShadow: "0 24px 70px rgba(15, 23, 42, 0.14)", display: "grid", gap: 18 };
-const loginIconStyle = { width: 56, height: 56, display: "grid", placeItems: "center", borderRadius: 20, background: "linear-gradient(135deg, #eff6ff, #dbeafe)", border: "1px solid #bfdbfe", boxShadow: "0 10px 24px rgba(37, 99, 235, 0.12)" };
-const loginTitleStyle = { margin: "0", fontSize: 30, letterSpacing: -0.7, color: "#0f172a" };
-const loginSubtitleStyle = { margin: "8px 0 2px", color: "#64748b", lineHeight: 1.5, fontSize: 14 };
-const loginInputStyle = { width: "100%", boxSizing: "border-box", border: "1px solid #cbd5e1", borderRadius: 15, padding: "13px 14px", fontSize: 15, background: "rgba(255, 255, 255, 0.95)", outline: "none", boxShadow: "inset 0 1px 2px rgba(15, 23, 42, 0.04)" };
-const loginButtonStyle = { border: "1px solid #93c5fd", borderRadius: 16, padding: "14px 18px", background: "linear-gradient(135deg, #2563eb, #1d4ed8)", color: "#ffffff", fontWeight: 700, letterSpacing: "0.1px", cursor: "pointer", boxShadow: "0 12px 24px rgba(37, 99, 235, 0.20)" };
+const loginPageStyle = { minHeight: "100vh", display: "grid", placeItems: "center", position: "relative", overflow: "hidden", background: "radial-gradient(circle at 16% 18%, rgba(96, 165, 250, 0.28) 0, transparent 28%), radial-gradient(circle at 84% 82%, rgba(45, 212, 191, 0.22) 0, transparent 30%), linear-gradient(135deg, #0f172a 0%, #1e293b 45%, #eef2ff 45.1%, #f8fafc 100%)", padding: 24, fontFamily: "Arial, sans-serif", color: "#0f172a" };
+const loginCardStyle = { width: "100%", maxWidth: 560, position: "relative", zIndex: 1, background: "rgba(255, 255, 255, 0.96)", backdropFilter: "blur(22px)", border: "1px solid rgba(226, 232, 240, 0.95)", borderTop: "6px solid #2563eb", borderRadius: 30, padding: 34, boxShadow: "0 30px 90px rgba(15, 23, 42, 0.26)", display: "grid", gap: 18, overflow: "hidden" };
+const loginIconStyle = { width: 64, height: 64, display: "grid", placeItems: "center", borderRadius: 22, background: "linear-gradient(135deg, #0f172a, #2563eb)", border: "1px solid rgba(147, 197, 253, 0.55)", boxShadow: "0 16px 34px rgba(37, 99, 235, 0.28)", color: "white" };
+const loginTitleStyle = { margin: "0", fontSize: 32, letterSpacing: -0.9, color: "#0f172a", lineHeight: 1.08 };
+const loginSubtitleStyle = { margin: "9px 0 2px", color: "#475569", lineHeight: 1.55, fontSize: 15 };
+const loginInputStyle = { width: "100%", boxSizing: "border-box", border: "1px solid #cbd5e1", borderRadius: 16, padding: "14px 15px", fontSize: 15, background: "#ffffff", outline: "none", boxShadow: "0 1px 2px rgba(15, 23, 42, 0.04)", color: "#0f172a" };
+const loginButtonStyle = { border: "1px solid #1d4ed8", borderRadius: 16, padding: "15px 18px", background: "linear-gradient(135deg, #1e293b, #2563eb)", color: "#ffffff", fontWeight: 800, letterSpacing: "0.1px", cursor: "pointer", boxShadow: "0 16px 28px rgba(37, 99, 235, 0.24)" };
 const loginErrorStyle = { background: "#fee2e2", border: "1px solid #fecaca", color: "#991b1b", padding: 12, borderRadius: 14, fontSize: 14 };
-const loginDecorOneStyle = { position: "absolute", width: 280, height: 280, borderRadius: "999px", background: "rgba(37, 99, 235, 0.10)", top: -90, right: -80, filter: "blur(2px)" };
-const loginDecorTwoStyle = { position: "absolute", width: 240, height: 240, borderRadius: "999px", background: "rgba(20, 184, 166, 0.12)", bottom: -80, left: -70, filter: "blur(2px)" };
+const loginDecorOneStyle = { position: "absolute", width: 360, height: 360, borderRadius: "999px", background: "rgba(37, 99, 235, 0.22)", top: -120, right: -110, filter: "blur(18px)" };
+const loginDecorTwoStyle = { position: "absolute", width: 300, height: 300, borderRadius: "999px", background: "rgba(20, 184, 166, 0.20)", bottom: -120, left: -90, filter: "blur(18px)" };
 const loginTopLineStyle = { display: "flex", alignItems: "center", justifyContent: "space-between", gap: 14 };
-const loginBadgeStyle = { display: "inline-flex", alignItems: "center", borderRadius: 999, padding: "6px 11px", background: "#f8fafc", color: "#475569", border: "1px solid #e2e8f0", fontSize: 12, fontWeight: 700, letterSpacing: "0.2px", textTransform: "uppercase" };
-const employeeAccessPanelStyle = { background: "linear-gradient(135deg, #f8fafc, #eff6ff)", border: "1px solid #dbeafe", borderRadius: 20, padding: 16, display: "grid", gap: 10 };
-const adminAccessPanelStyle = { background: "rgba(248, 250, 252, 0.88)", border: "1px solid #e2e8f0", borderRadius: 20, padding: 16, display: "grid", gap: 11 };
+const loginBadgeStyle = { display: "inline-flex", alignItems: "center", borderRadius: 999, padding: "7px 12px", background: "#eff6ff", color: "#1e3a8a", border: "1px solid #bfdbfe", fontSize: 12, fontWeight: 800, letterSpacing: "0.25px", textTransform: "uppercase" };
+const employeeAccessPanelStyle = { background: "linear-gradient(135deg, #f8fafc, #eff6ff)", border: "1px solid #bfdbfe", borderRadius: 22, padding: 18, display: "grid", gap: 10, boxShadow: "0 10px 24px rgba(37, 99, 235, 0.08)" };
+const adminAccessPanelStyle = { background: "linear-gradient(135deg, #ffffff, #f8fafc)", border: "1px solid #e2e8f0", borderRadius: 22, padding: 18, display: "grid", gap: 11, boxShadow: "0 10px 24px rgba(15, 23, 42, 0.06)" };
 const adminHeaderStyle = { display: "flex", alignItems: "center", gap: 8, color: "#475569", fontSize: 13, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.25px" };
-const loginSecondaryButtonStyle = { border: "1px solid #cbd5e1", borderRadius: 15, padding: "12px 16px", background: "linear-gradient(135deg, #ffffff, #f1f5f9)", color: "#334155", fontWeight: 700, cursor: "pointer", boxShadow: "0 6px 14px rgba(15, 23, 42, 0.06)" };
-const loginGhostButtonStyle = { border: "none", background: "transparent", color: "#64748b", fontWeight: 700, cursor: "pointer", padding: "4px 8px", justifySelf: "center" };
+const loginSecondaryButtonStyle = { border: "1px solid #cbd5e1", borderRadius: 16, padding: "13px 16px", background: "linear-gradient(135deg, #0f172a, #334155)", color: "#ffffff", fontWeight: 800, cursor: "pointer", boxShadow: "0 12px 24px rgba(15, 23, 42, 0.16)" };
+const loginGhostButtonStyle = { border: "1px solid #e2e8f0", borderRadius: 14, background: "#ffffff", color: "#475569", fontWeight: 800, cursor: "pointer", padding: "11px 16px", justifySelf: "stretch" };
 const containerStyle = { maxWidth: 1250, margin: "0 auto" };
 const headerStyle = { display: "flex", justifyContent: "space-between", gap: 16, alignItems: "flex-start", marginBottom: 24 };
 const navStyle = { display: "flex", gap: 8, marginBottom: 20, flexWrap: "wrap" };
