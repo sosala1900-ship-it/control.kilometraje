@@ -305,6 +305,19 @@ function parseNumero(valor, fallback = 0) {
   return Number.isFinite(numero) ? numero : fallback;
 }
 
+function limpiarNumeroInput(valor) {
+  const texto = String(valor ?? "").replace(/[^0-9.,]/g, "");
+  const partes = texto.split(/[.,]/);
+
+  if (partes.length <= 1) return partes[0] || "";
+
+  const separador = texto.includes(",") ? "," : ".";
+  const entero = partes[0] || "";
+  const decimal = partes.slice(1).join("");
+
+  return `${entero}${separador}${decimal}`;
+}
+
 function normalizarEmpleado(row) {
   return {
     id: row["ID"] || row["EMPLEADO ID"] || row["id"] || "",
@@ -435,7 +448,7 @@ export default function App() {
 
   const empleadoSeleccionado = empleadosApp.find((e) => e.id === form.empleadoId);
   const precioKmAplicado = empleadoSeleccionado ? empleadoSeleccionado.precioKm || PRECIO_KM : PRECIO_KM;
-  const importe = form.km ? Number(form.km || 0) * precioKmAplicado : 0;
+  const importe = form.km ? parseNumero(form.km, 0) * precioKmAplicado : 0;
 
   const esAdmin = modoAcceso === "admin";
   const esEmpleado = modoAcceso === "empleado";
@@ -583,17 +596,37 @@ export default function App() {
   }
 
   function handleChange(e) {
-    setForm({ ...form, [e.target.name]: e.target.value });
+    const { name, value } = e.target;
+
+    if (name === "km") {
+      setForm({ ...form, km: limpiarNumeroInput(value) });
+      return;
+    }
+
+    setForm({ ...form, [name]: value });
   }
 
   function handleHorasChange(e) {
-    setFormHoras({ ...formHoras, [e.target.name]: e.target.value });
+    const { name, value } = e.target;
+
+    if (name === "horas") {
+      setFormHoras({ ...formHoras, horas: limpiarNumeroInput(value) });
+      return;
+    }
+
+    setFormHoras({ ...formHoras, [name]: value });
   }
 
   async function guardarHoras() {
-    const horas = parseNumero(formHoras.horas, 0);
-    if (!formHoras.fecha || !formHoras.empleadoId || !formHoras.proyectoId || horas <= 0) {
-      setMensaje("Completa fecha, empleado, proyecto y horas. Las horas deben ser mayores que 0.");
+    const horas = parseNumero(formHoras.horas, NaN);
+
+    if (!formHoras.fecha || !formHoras.empleadoId || !formHoras.proyectoId) {
+      setMensaje("Completa fecha, empleado y proyecto.");
+      return;
+    }
+
+    if (!Number.isFinite(horas) || horas <= 0) {
+      setMensaje("Las horas deben ser un número válido mayor que 0.");
       return;
     }
 
@@ -649,14 +682,20 @@ export default function App() {
   }
 
   async function guardar() {
-    if (!form.fecha || !form.empleadoId || !form.proyectoId || !form.origen || !form.destino || !form.km) {
-      setMensaje("Completa fecha, empleado, proyecto, origen, destino y km.");
+    if (!form.fecha || !form.empleadoId || !form.proyectoId || !form.origen || !form.destino) {
+      setMensaje("Completa fecha, empleado, proyecto, origen y destino.");
+      return;
+    }
+
+    const km = parseNumero(form.km, NaN);
+
+    if (!Number.isFinite(km) || km <= 0) {
+      setMensaje("Los km deben ser un número válido mayor que 0.");
       return;
     }
 
     const empleado = empleadosApp.find((e) => e.id === form.empleadoId);
     const proyecto = proyectosApp.find((p) => p.id === form.proyectoId);
-    const km = Number(form.km);
     const precioKm = empleado?.precioKm || PRECIO_KM;
     const importe = km * precioKm;
 
@@ -1084,7 +1123,7 @@ export default function App() {
                 <Field label="Destino"><input name="destino" value={form.destino} onChange={handleChange} placeholder="Ej. La Laguna" style={compactInputStyle} /></Field>
               </div>
               <div style={registroKmResumenStyle}>
-                <Field label="Km totales (ida y vuelta)"><input type="number" name="km" value={form.km} onChange={handleChange} placeholder="Ej. 42" style={compactInputStyle} /></Field>
+                <Field label="Km totales (ida y vuelta)"><input type="text" inputMode="decimal" name="km" value={form.km} onChange={handleChange} placeholder="Ej. 42" style={compactInputStyle} /></Field>
                 <div style={resumenCalculoStyle}><div style={{ fontSize: 12, color: "#64748B", marginBottom: 4 }}>Precio/Km</div><strong style={{ color: "#334155", fontWeight: 500 }}>{`${numero(precioKmAplicado)} €/km`}</strong></div>
                 <div style={resumenCalculoStyle}><div style={{ fontSize: 12, color: "#64748B", marginBottom: 4 }}>Importe</div><strong style={{ color: "#334155", fontWeight: 500 }}>{euros(importe)}</strong></div>
               </div>
@@ -1111,7 +1150,7 @@ export default function App() {
                     </div>
                     <Field label="Proyecto" full><select name="proyectoId" value={formHoras.proyectoId} onChange={handleHorasChange} style={compactInputStyle}><option value="">Selecciona proyecto</option>{proyectosApp.filter((p) => esActivo(p.activo)).map((p) => <option key={p.id} value={p.id}>{p.nombre}</option>)}</select></Field>
                     <div style={hoursInlineRowStyle}>
-                      <Field label="Horas"><input type="number" step="0.25" name="horas" value={formHoras.horas} onChange={handleHorasChange} placeholder="Ej. 2,5" style={compactInputStyle} /></Field>
+                      <Field label="Horas"><input type="text" inputMode="decimal" name="horas" value={formHoras.horas} onChange={handleHorasChange} placeholder="Ej. 2,5" style={compactInputStyle} /></Field>
                       <div style={resumenCalculoStyle}><div style={{ fontSize: 12, color: "#64748B", marginBottom: 4 }}>Total</div><strong style={{ color: "#334155", fontWeight: 500 }}>{numero(parseNumero(formHoras.horas, 0))} h</strong></div>
                     </div>
                     <Field label="Observaciones" full><textarea name="observaciones" value={formHoras.observaciones} onChange={handleHorasChange} placeholder="Opcional" style={{ ...compactInputStyle, minHeight: 76, resize: "vertical" }} /></Field>
