@@ -969,21 +969,28 @@ export default function App() {
               <AdminKeyIcon />
               <span>Acceso administrador</span>
             </div>
-            <label style={accessFieldStyle}>
-              <span style={accessLabelStyle}>Contraseña de administrador</span>
-              <input
-                type="password"
-                value={passwordAdmin}
-                onChange={(e) => {
-                  setPasswordAdmin(e.target.value);
-                  setErrorAdmin("");
-                }}
-                placeholder="Introduce la clave admin"
-                style={accessInputStyle}
-              />
-            </label>
+
+            <div style={adminInlineAccessStyle}>
+              <label style={adminInlineFieldStyle}>
+                <span style={accessLabelStyle}>Contraseña de administrador</span>
+                <input
+                  type="password"
+                  value={passwordAdmin}
+                  onChange={(e) => {
+                    setPasswordAdmin(e.target.value);
+                    setErrorAdmin("");
+                  }}
+                  placeholder="Introduce la clave admin"
+                  style={accessInputStyle}
+                />
+              </label>
+
+              <button type="submit" style={accessAdminButtonStyle}>
+                Entrar
+              </button>
+            </div>
+
             {errorAdmin && <div style={loginErrorStyle}>{errorAdmin}</div>}
-            <button type="submit" style={accessAdminButtonStyle}>Entrar como administrador</button>
           </form>
 
           <button type="button" onClick={cerrarSesion} style={accessGhostButtonStyle}>
@@ -1344,17 +1351,20 @@ const accessInputStyle = {
 };
 
 const accessPrimaryButtonStyle = {
-  border: "1px solid #1e40af",
-  borderRadius: 15,
-  padding: "14px 18px",
-  minHeight: 52,
-  background: "#1d4ed8",
+  border: "1px solid #cbd5e1",
+  borderRadius: 13,
+  padding: "11px 18px",
+  minHeight: 44,
+  width: "auto",
+  minWidth: 160,
+  justifySelf: "center",
+  background: "#334155",
   color: "#ffffff",
-  fontWeight: 700,
-  fontSize: 16,
+  fontWeight: 600,
+  fontSize: 15,
   letterSpacing: "0.1px",
   cursor: "pointer",
-  boxShadow: "0 14px 28px rgba(37, 99, 235, 0.22)",
+  boxShadow: "0 8px 18px rgba(15, 23, 42, 0.14)",
 };
 
 const employeeAccessPanelStyle = {
@@ -1408,17 +1418,31 @@ const adminHeaderStyle = {
   letterSpacing: "0.5px",
 };
 
+const adminInlineAccessStyle = {
+  display: "grid",
+  gridTemplateColumns: "minmax(0, 1fr) auto",
+  gap: 12,
+  alignItems: "end",
+};
+
+const adminInlineFieldStyle = {
+  display: "grid",
+  gap: 9,
+  minWidth: 0,
+};
+
 const accessAdminButtonStyle = {
   border: "1px solid #cbd5e1",
-  borderRadius: 15,
-  padding: "13px 18px",
-  minHeight: 50,
-  background: "#ffffff",
-  color: "#334155",
-  fontWeight: 700,
-  fontSize: 15,
+  borderRadius: 13,
+  padding: "11px 16px",
+  minHeight: 52,
+  background: "#334155",
+  color: "#ffffff",
+  fontWeight: 600,
+  fontSize: 14,
+  whiteSpace: "nowrap",
   cursor: "pointer",
-  boxShadow: "0 8px 18px rgba(15, 23, 42, 0.06)",
+  boxShadow: "0 8px 18px rgba(15, 23, 42, 0.12)",
 };
 
 const accessGhostButtonStyle = {
