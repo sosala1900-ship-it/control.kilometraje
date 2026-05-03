@@ -286,6 +286,10 @@ function esRolEmpleado(rol) {
   return normalizarTexto(rol) === "EMPLEADO";
 }
 
+function esRolAdministrador(rol) {
+  return normalizarTexto(rol) === "ADMINISTRADOR";
+}
+
 function normalizarProyecto(row) {
   return {
     id: row["ID PROYECTO"] || row["PROYECTO ID"] || row["id"] || "",
@@ -356,36 +360,6 @@ function agruparPorProyecto(registros) {
     map[key].registros += 1;
   });
   return Object.values(map).sort((a, b) => b.km - a.km);
-}
-
-function AccessShieldIcon() {
-  return (
-    <svg width="34" height="34" viewBox="0 0 48 48" fill="none" aria-hidden="true">
-      <path d="M24 5.5L38 10.6V21.4C38 31.1 32.2 39.8 24 43C15.8 39.8 10 31.1 10 21.4V10.6L24 5.5Z" fill="#dbeafe" stroke="#2563eb" strokeWidth="2.2" />
-      <path d="M18.5 24.2L22.3 28L30.2 19.5" stroke="#1e3a8a" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
-  );
-}
-
-function UserAccessIcon() {
-  return (
-    <svg width="34" height="34" viewBox="0 0 48 48" fill="none" aria-hidden="true">
-      <circle cx="24" cy="18" r="7" fill="#dbeafe" stroke="#2563eb" strokeWidth="2.2" />
-      <path d="M12.5 39C14.3 32.6 18.6 29.5 24 29.5C29.4 29.5 33.7 32.6 35.5 39" fill="#eff6ff" />
-      <path d="M12.5 39C14.3 32.6 18.6 29.5 24 29.5C29.4 29.5 33.7 32.6 35.5 39" stroke="#1e3a8a" strokeWidth="2.2" strokeLinecap="round" />
-      <path d="M34 13.5H39.5M36.8 10.8V16.2" stroke="#0f766e" strokeWidth="2.2" strokeLinecap="round" />
-    </svg>
-  );
-}
-
-function AdminKeyIcon() {
-  return (
-    <svg width="22" height="22" viewBox="0 0 32 32" fill="none" aria-hidden="true">
-      <circle cx="11" cy="16" r="5.5" fill="#f8fafc" stroke="#475569" strokeWidth="2" />
-      <path d="M16.5 16H28M22 16V20M25.5 16V19" stroke="#475569" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-      <circle cx="11" cy="16" r="1.5" fill="#475569" />
-    </svg>
-  );
 }
 
 export default function App() {
@@ -459,41 +433,49 @@ export default function App() {
     observaciones: "",
   });
 
+  const empleadoSeleccionado = empleadosApp.find((e) => e.id === form.empleadoId);
+  const precioKmAplicado = empleadoSeleccionado ? empleadoSeleccionado.precioKm || PRECIO_KM : PRECIO_KM;
+  const importe = form.km ? Number(form.km || 0) * precioKmAplicado : 0;
+
   const esAdmin = modoAcceso === "admin";
   const esEmpleado = modoAcceso === "empleado";
   const empleadoSesion = empleadosApp.find((e) => e.id === empleadoSesionId);
-  const empleadosParaSelector = empleadosApp.filter((e) => esRolEmpleado(e.rol));
-
-  const tabsVisibles = esEmpleado
-    ? [
+  const empleadosSelector = useMemo(
+    () => empleadosApp.filter((e) => esRolEmpleado(e.rol)),
+    [empleadosApp]
+  );
+  const empleadosFormulario = useMemo(() => {
+    if (esEmpleado && empleadoSesion) return [empleadoSesion];
+    return empleadosApp;
+  }, [empleadosApp, esEmpleado, empleadoSesion]);
+  const tabsVisibles = useMemo(() => {
+    if (esEmpleado) {
+      return [
         { id: "dashboard", label: "Mi resumen" },
         { id: "registro", label: "Nuevo registro" },
         { id: "horas", label: "Horas complementarias" },
         { id: "historico", label: "Mi histórico" },
-      ]
-    : tabs;
-
-  const registrosVisibles = esEmpleado
-    ? registros.filter((r) => r.empleadoId === empleadoSesionId)
-    : registros;
-
-  const horasComplementariasVisibles = esEmpleado
-    ? horasComplementarias.filter((r) => r.empleadoId === empleadoSesionId)
-    : horasComplementarias;
-
-  const empleadoSeleccionado = empleadosApp.find((e) => e.id === form.empleadoId);
-  const precioKmAplicado = empleadoSeleccionado ? empleadoSeleccionado.precioKm || PRECIO_KM : PRECIO_KM;
-  const importe = form.km ? Number(form.km || 0) * precioKmAplicado : 0;
+      ];
+    }
+    return tabs;
+  }, [esEmpleado]);
 
   useEffect(() => {
     if (accesoAutorizado) cargarDatos();
   }, [accesoAutorizado]);
 
   useEffect(() => {
-    if (!esEmpleado || !empleadoSesionId) return;
+    if (modoAcceso && !tabsVisibles.some((item) => item.id === tab)) {
+      setTab(tabsVisibles[0]?.id || "dashboard");
+    }
+  }, [modoAcceso, tabsVisibles, tab]);
 
-    setForm((prev) => ({ ...prev, empleadoId: empleadoSesionId }));
-    setFormHoras((prev) => ({ ...prev, empleadoId: empleadoSesionId }));
+  useEffect(() => {
+    if (esEmpleado && empleadoSesionId) {
+      setForm((prev) => ({ ...prev, empleadoId: empleadoSesionId }));
+      setFormHoras((prev) => ({ ...prev, empleadoId: empleadoSesionId }));
+      setFiltrosHistorico((prev) => ({ ...prev, empleadoId: "" }));
+    }
   }, [esEmpleado, empleadoSesionId]);
 
   function accederApp(e) {
@@ -510,52 +492,32 @@ export default function App() {
     setAccesoAutorizado(true);
   }
 
-  function seleccionarEmpleado(empleadoId) {
-    if (!empleadoId) return;
-
+  function seleccionarEmpleado(idEmpleado) {
+    if (!idEmpleado) return;
     try {
       localStorage.setItem(ACCESS_MODE_STORAGE_KEY, "empleado");
-      localStorage.setItem(ACCESS_EMPLOYEE_STORAGE_KEY, empleadoId);
+      localStorage.setItem(ACCESS_EMPLOYEE_STORAGE_KEY, idEmpleado);
     } catch {}
-
+    setEmpleadoSesionId(idEmpleado);
     setModoAcceso("empleado");
-    setEmpleadoSesionId(empleadoId);
-    setForm((prev) => ({ ...prev, empleadoId }));
-    setFormHoras((prev) => ({ ...prev, empleadoId }));
     setTab("dashboard");
     setMensaje("");
   }
 
   function accederComoAdmin(e) {
     e.preventDefault();
-
     if (passwordAdmin.trim() !== ADMIN_PASSWORD) {
       setErrorAdmin("Contraseña de administrador incorrecta.");
       return;
     }
-
     try {
       localStorage.setItem(ACCESS_MODE_STORAGE_KEY, "admin");
       localStorage.removeItem(ACCESS_EMPLOYEE_STORAGE_KEY);
     } catch {}
-
-    setModoAcceso("admin");
-    setEmpleadoSesionId("");
     setPasswordAdmin("");
     setErrorAdmin("");
-    setTab("dashboard");
-    setMensaje("");
-  }
-
-  function cambiarUsuario() {
-    try {
-      localStorage.removeItem(ACCESS_MODE_STORAGE_KEY);
-      localStorage.removeItem(ACCESS_EMPLOYEE_STORAGE_KEY);
-    } catch {}
-
-    setModoAcceso("");
     setEmpleadoSesionId("");
-    setRegistroEditando(null);
+    setModoAcceso("admin");
     setTab("dashboard");
     setMensaje("");
   }
@@ -675,7 +637,7 @@ export default function App() {
         ...prev,
       ]);
 
-      setFormHoras({ fecha: "", empleadoId: esEmpleado ? empleadoSesionId : "", proyectoId: "", horas: "", observaciones: "" });
+      setFormHoras({ fecha: "", empleadoId: "", proyectoId: "", horas: "", observaciones: "" });
       setMensaje("Horas complementarias guardadas correctamente.");
       cargarDatos();
     } catch (error) {
@@ -745,7 +707,7 @@ export default function App() {
         setMensaje("Registro guardado correctamente.");
       }
 
-      setForm({ fecha: "", empleadoId: esEmpleado ? empleadoSesionId : "", proyectoId: "", origen: "", destino: "", km: "", observaciones: "" });
+      setForm({ fecha: "", empleadoId: "", proyectoId: "", origen: "", destino: "", km: "", observaciones: "" });
       setTab("dashboard");
     } catch (error) {
       console.error(error);
@@ -778,7 +740,7 @@ export default function App() {
   function cancelarEdicion(e) {
     if (e && typeof e.preventDefault === "function") e.preventDefault();
     setRegistroEditando(null);
-    setForm({ fecha: "", empleadoId: esEmpleado ? empleadoSesionId : "", proyectoId: "", origen: "", destino: "", km: "", observaciones: "" });
+    setForm({ fecha: "", empleadoId: "", proyectoId: "", origen: "", destino: "", km: "", observaciones: "" });
     setMensaje("Edición cancelada. Has vuelto al histórico.");
     setPaginaHistorico(1);
     setTab("historico");
@@ -846,7 +808,6 @@ export default function App() {
     ventana.document.close();
   }
 
-
   function imprimirInformeAsesoriaHoras() {
     const nombreMes = getNombreMesSeleccionado();
     const filas = horasPorEmpleadoMes
@@ -866,6 +827,16 @@ export default function App() {
     ventana.document.write(html);
     ventana.document.close();
   }
+
+  const registrosVisibles = useMemo(() => {
+    if (!esEmpleado || !empleadoSesionId) return registros;
+    return registros.filter((r) => r.empleadoId === empleadoSesionId);
+  }, [registros, esEmpleado, empleadoSesionId]);
+
+  const horasComplementariasVisibles = useMemo(() => {
+    if (!esEmpleado || !empleadoSesionId) return horasComplementarias;
+    return horasComplementarias.filter((r) => r.empleadoId === empleadoSesionId);
+  }, [horasComplementarias, esEmpleado, empleadoSesionId]);
 
   const registrosMes = useMemo(() => registrosVisibles.filter((r) => getMonth(r.fecha) === mes && getYear(r.fecha) === anio), [registrosVisibles, mes, anio]);
   const horasMes = useMemo(() => horasComplementariasVisibles.filter((r) => getMonth(r.fecha) === mes && getYear(r.fecha) === anio), [horasComplementariasVisibles, mes, anio]);
@@ -919,21 +890,21 @@ export default function App() {
   if (!accesoAutorizado) {
     return (
       <div style={loginPageStyle}>
-        <div style={loginDecorOneStyle} />
-        <div style={loginDecorTwoStyle} />
-        <form onSubmit={accederApp} style={loginCardStyle}>
-          <div style={loginTopLineStyle}>
-            <div style={loginIconStyle}><AccessShieldIcon /></div>
-            <span style={loginBadgeStyle}>Acceso interno</span>
+        <div style={accessGlowOneStyle} />
+        <div style={accessGlowTwoStyle} />
+        <form onSubmit={accederApp} style={accessShellStyle}>
+          <div style={accessBrandRowStyle}>
+            <div style={accessIconStyle}><AccessShieldIcon /></div>
+            <span style={accessBadgeStyle}>Acceso interno</span>
           </div>
 
-          <div>
-            <h1 style={loginTitleStyle}>Control de Kilometraje</h1>
-            <p style={loginSubtitleStyle}>Fundación Canaria Imagine 2050 · Kilometraje y horas complementarias.</p>
+          <div style={accessHeaderBlockStyle}>
+            <h1 style={accessTitleStyle}>Control de Kilometraje</h1>
+            <p style={accessSubtitleStyle}>Fundación Canaria Imagine 2050 · Kilometraje y horas complementarias.</p>
           </div>
 
-          <label style={{ display: "grid", gap: 8 }}>
-            <span style={{ fontSize: 13, fontWeight: 700, color: "#334155" }}>Contraseña general</span>
+          <label style={accessFieldStyle}>
+            <span style={accessLabelStyle}>Contraseña general</span>
             <input
               type="password"
               value={passwordAcceso}
@@ -943,11 +914,15 @@ export default function App() {
               }}
               placeholder="Introduce la contraseña"
               autoFocus
-              style={loginInputStyle}
+              style={accessInputStyle}
             />
           </label>
+
           {errorAcceso && <div style={loginErrorStyle}>{errorAcceso}</div>}
-          <button type="submit" style={loginButtonStyle}>Acceder a la app</button>
+
+          <button type="submit" style={accessPrimaryButtonStyle}>
+            Acceder
+          </button>
         </form>
       </div>
     );
@@ -956,34 +931,37 @@ export default function App() {
   if (!modoAcceso) {
     return (
       <div style={loginPageStyle}>
-        <div style={loginDecorOneStyle} />
-        <div style={loginDecorTwoStyle} />
-        <div style={loginCardStyle}>
-          <div style={loginTopLineStyle}>
-            <div style={loginIconStyle}><UserAccessIcon /></div>
-            <span style={loginBadgeStyle}>Identificación</span>
+        <div style={accessGlowOneStyle} />
+        <div style={accessGlowTwoStyle} />
+        <div style={accessShellStyle}>
+          <div style={accessBrandRowStyle}>
+            <div style={accessIconStyle}><UserAccessIcon /></div>
+            <span style={accessBadgeStyle}>Identificación</span>
           </div>
 
-          <div>
-            <h1 style={loginTitleStyle}>Acceso a la aplicación</h1>
-            <p style={loginSubtitleStyle}>Selecciona tu nombre para continuar.</p>
+          <div style={accessHeaderBlockStyle}>
+            <h1 style={accessTitleStyle}>Acceso a la aplicación</h1>
+            <p style={accessSubtitleStyle}>Selecciona tu nombre para continuar.</p>
           </div>
 
           <div style={employeeAccessPanelStyle}>
-            <label style={{ display: "grid", gap: 8 }}>
-              <span style={{ fontSize: 13, fontWeight: 700, color: "#334155" }}>Empleado</span>
-              <select
-                value=""
-                onChange={(e) => seleccionarEmpleado(e.target.value)}
-                style={loginInputStyle}
-                disabled={cargando || empleadosParaSelector.length === 0}
-              >
-                <option value="">{cargando ? "Cargando empleados..." : "Selecciona tu nombre"}</option>
-                {empleadosParaSelector.map((e) => (
-                  <option key={e.id} value={e.id}>{e.nombre}</option>
-                ))}
-              </select>
-            </label>
+            <div style={panelHeaderRowStyle}>
+              <div>
+                <div style={panelTitleStyle}>Entrada de empleado</div>
+                <div style={panelHintStyle}>Acceso personal a registros de kilometraje y horas.</div>
+              </div>
+            </div>
+            <select
+              value=""
+              onChange={(e) => seleccionarEmpleado(e.target.value)}
+              style={accessInputStyle}
+              disabled={cargando || empleadosSelector.length === 0}
+            >
+              <option value="">{cargando ? "Cargando empleados..." : "Selecciona tu nombre"}</option>
+              {empleadosSelector.map((e) => (
+                <option key={e.id} value={e.id}>{e.nombre}</option>
+              ))}
+            </select>
           </div>
 
           <form onSubmit={accederComoAdmin} style={adminAccessPanelStyle}>
@@ -991,8 +969,8 @@ export default function App() {
               <AdminKeyIcon />
               <span>Acceso administrador</span>
             </div>
-            <label style={{ display: "grid", gap: 8 }}>
-              <span style={{ fontSize: 13, fontWeight: 700, color: "#334155" }}>Contraseña de administrador</span>
+            <label style={accessFieldStyle}>
+              <span style={accessLabelStyle}>Contraseña de administrador</span>
               <input
                 type="password"
                 value={passwordAdmin}
@@ -1000,15 +978,15 @@ export default function App() {
                   setPasswordAdmin(e.target.value);
                   setErrorAdmin("");
                 }}
-                placeholder="Contraseña de administrador"
-                style={loginInputStyle}
+                placeholder="Introduce la clave admin"
+                style={accessInputStyle}
               />
             </label>
             {errorAdmin && <div style={loginErrorStyle}>{errorAdmin}</div>}
-            <button type="submit" style={loginSecondaryButtonStyle}>Entrar como administrador</button>
+            <button type="submit" style={accessAdminButtonStyle}>Entrar como administrador</button>
           </form>
 
-          <button type="button" onClick={cerrarSesion} style={loginGhostButtonStyle}>
+          <button type="button" onClick={cerrarSesion} style={accessGhostButtonStyle}>
             Cerrar acceso
           </button>
         </div>
@@ -1044,7 +1022,7 @@ export default function App() {
 
         {mensaje && <div style={messageStyle}>{mensaje}</div>}
 
-        {(tab === "dashboard" || tab === "horas") && (
+        {(tab === "dashboard" || tab === "informe" || tab === "horas") && (
           <Box title="Periodo de trabajo">
             <div style={periodControlsStyle}>
               <div style={{ width: 180 }}>
@@ -1075,10 +1053,10 @@ export default function App() {
               <Card title="Importe del mes" value={euros(totalesMes.importe)} accent="#fed7aa" />
             </div>
             <div style={twoColumnsStyle}>
-              <Box title={esEmpleado ? "Mis km por proyecto" : "Resumen mensual por proyecto"}>
+              <Box title="Resumen mensual por proyecto">
                 <Table headers={["Proyecto", "Km", "Importe", "Registros"]} rows={porProyectoMes.map((r) => [<ProjectBadge key={r.proyectoId} proyectoId={r.proyectoId} proyecto={r.proyecto} />, numero(r.km), euros(r.importe), r.registros])} />
               </Box>
-              <Box title={esEmpleado ? "Mi resumen del mes" : "Resumen mensual por empleado"}>
+              <Box title="Resumen mensual por empleado">
                 <Table headers={["Empleado", "Km", "Importe", "Registros"]} rows={porEmpleadoMes.map((r) => [r.empleado, numero(r.km), euros(r.importe), r.registros])} />
               </Box>
             </div>
@@ -1091,10 +1069,10 @@ export default function App() {
             <div style={registroFormGridStyle}>
               <div style={registroTwoColumnsStyle}>
                 <Field label="Fecha"><input type="date" name="fecha" value={form.fecha} onChange={handleChange} style={compactInputStyle} /></Field>
-                <Field label="Empleado"><select name="empleadoId" value={form.empleadoId} onChange={handleChange} disabled={esEmpleado} style={compactInputStyle}><option value="">Selecciona empleado</option>{(esEmpleado && empleadoSesion ? [empleadoSesion] : empleadosParaSelector).map((e) => <option key={e.id} value={e.id}>{e.nombre}</option>)}</select></Field>
+                <Field label="Empleado"><select name="empleadoId" value={form.empleadoId} onChange={handleChange} style={compactInputStyle}><option value="">Selecciona empleado</option>{empleadosFormulario.map((e) => <option key={e.id} value={e.id}>{e.nombre}</option>)}</select></Field>
               </div>
               <Field label="Proyecto" full><select name="proyectoId" value={form.proyectoId} onChange={handleChange} style={compactInputStyle}><option value="">Selecciona proyecto</option>{proyectosApp.filter((p) => esActivo(p.activo)).map((p) => <option key={p.id} value={p.id}>{p.nombre}</option>)}</select></Field>
-              <div style={registroEqualTwoColumnsStyle}>
+              <div style={registroTwoColumnsStyle}>
                 <Field label="Origen"><input name="origen" value={form.origen} onChange={handleChange} placeholder="Ej. Santa Cruz" style={compactInputStyle} /></Field>
                 <Field label="Destino"><input name="destino" value={form.destino} onChange={handleChange} placeholder="Ej. La Laguna" style={compactInputStyle} /></Field>
               </div>
@@ -1122,7 +1100,7 @@ export default function App() {
                   <div style={hoursFormGridStyle}>
                     <div style={registroTwoColumnsStyle}>
                       <Field label="Fecha"><input type="date" name="fecha" value={formHoras.fecha} onChange={handleHorasChange} style={compactInputStyle} /></Field>
-                      <Field label="Empleado"><select name="empleadoId" value={formHoras.empleadoId} onChange={handleHorasChange} disabled={esEmpleado} style={compactInputStyle}><option value="">Selecciona empleado</option>{(esEmpleado && empleadoSesion ? [empleadoSesion] : empleadosParaSelector).map((e) => <option key={e.id} value={e.id}>{e.nombre}</option>)}</select></Field>
+                      <Field label="Empleado"><select name="empleadoId" value={formHoras.empleadoId} onChange={handleHorasChange} style={compactInputStyle}><option value="">Selecciona empleado</option>{empleadosFormulario.map((e) => <option key={e.id} value={e.id}>{e.nombre}</option>)}</select></Field>
                     </div>
                     <Field label="Proyecto" full><select name="proyectoId" value={formHoras.proyectoId} onChange={handleHorasChange} style={compactInputStyle}><option value="">Selecciona proyecto</option>{proyectosApp.filter((p) => esActivo(p.activo)).map((p) => <option key={p.id} value={p.id}>{p.nombre}</option>)}</select></Field>
                     <div style={hoursInlineRowStyle}>
@@ -1140,10 +1118,7 @@ export default function App() {
                 </div>
               </div>
             </Box>
-            <Box title={esEmpleado ? "Mis horas del mes" : "Horas por empleado para asesoría"}>
-              {!esEmpleado && <button onClick={imprimirInformeAsesoriaHoras} onMouseEnter={() => setHoveredButton("exportar-pdf-asesoria-horas")} onMouseLeave={() => setHoveredButton(null)} style={{ ...primaryButtonStyle("exportar-pdf-asesoria-horas", hoveredButton), marginBottom: 14 }}>Exportar PDF Asesoría Horas</button>}
-              <Table headers={["Empleado", "Horas"]} alignments={["left", "right"]} rows={horasPorEmpleadoMes.filter((r) => Number(r.horas || 0) > 0).map((r) => [r.empleado, `${numero(r.horas)} h`])} />
-            </Box>
+            <Box title="Horas por empleado para asesoría"><button onClick={imprimirInformeAsesoriaHoras} onMouseEnter={() => setHoveredButton("exportar-pdf-asesoria-horas")} onMouseLeave={() => setHoveredButton(null)} style={{ ...primaryButtonStyle("exportar-pdf-asesoria-horas", hoveredButton), marginBottom: 14 }}>Exportar PDF Asesoría Horas</button><Table headers={["Empleado", "Horas"]} alignments={["left", "right"]} rows={horasPorEmpleadoMes.filter((r) => Number(r.horas || 0) > 0).map((r) => [r.empleado, `${numero(r.horas)} h`])} /></Box>
             <Box title="Horas por proyecto"><Table headers={["Proyecto", "Horas", "Registros"]} alignments={["left", "right", "center"]} rows={horasPorProyectoMes.map((r) => [<ProjectBadge key={r.proyectoId} proyectoId={r.proyectoId} proyecto={r.proyecto} />, `${numero(r.horas)} h`, r.registros])} /></Box>
             <Box title="Últimos registros de horas"><Table headers={["Fecha", "Empleado", "Proyecto", "Horas", "Observaciones"]} alignments={["left", "left", "left", "right", "left"]} rows={ultimasHoras.map((r) => [formatDate(r.fecha), r.empleado, <ProjectBadge key={r.idRegistro || r.id} proyectoId={r.proyectoId} proyecto={r.proyecto} />, `${numero(r.horas)} h`, r.observaciones || ""])} /></Box>
           </>
@@ -1151,50 +1126,25 @@ export default function App() {
 
         {tab === "informe" && (
           <>
-            <div style={informeTopGridStyle}>
-              <Box title="Periodo de trabajo">
-                <div style={periodControlsStyle}>
-                  <div style={{ width: 180 }}>
-                    <Field label="Mes">
-                      <select value={mes} onChange={(e) => setMes(e.target.value)} style={compactInputStyle}>
-                        {meses.map((m) => <option key={m.value} value={m.value}>{m.label}</option>)}
-                      </select>
-                    </Field>
-                  </div>
-                  <div style={{ width: 120 }}>
-                    <Field label="Año">
-                      <select value={anio} onChange={(e) => setAnio(e.target.value)} style={compactInputStyle}>
-                        <option value="2026">2026</option>
-                        <option value="2027">2027</option>
-                        <option value="2028">2028</option>
-                      </select>
-                    </Field>
-                  </div>
-                </div>
-              </Box>
-
-              <Box title="Informe mensual">
-                <p>Total km: <strong>{numero(totalesMes.km)} km</strong></p>
-                <p>Importe total: <strong>{euros(totalesMes.importe)}</strong></p>
-              </Box>
-            </div>
+            <Box title="Informe mensual">
+              <p>Total km: <strong>{numero(totalesMes.km)} km</strong></p>
+              <p>Importe total: <strong>{euros(totalesMes.importe)}</strong></p>
+              <button onClick={imprimirInformeAsesoria} onMouseEnter={() => setHoveredButton("exportar-pdf-asesoria")} onMouseLeave={() => setHoveredButton(null)} style={{ ...primaryButtonStyle("exportar-pdf-asesoria", hoveredButton), marginTop: 10 }}>Exportar PDF Asesoría</button>
+            </Box>
             <Box title="Resumen por proyecto"><Table headers={["Proyecto", "Km", "Importe", "Registros"]} rows={porProyectoMes.map((r) => [<ProjectBadge key={r.proyectoId} proyectoId={r.proyectoId} proyecto={r.proyecto} />, numero(r.km), euros(r.importe), r.registros])} /></Box>
             <Box title="Resumen por empleado"><Table headers={["Empleado", "Km", "Importe", "Registros"]} rows={porEmpleadoMes.map((r) => [r.empleado, numero(r.km), euros(r.importe), r.registros])} /></Box>
-            <Box title="Resumen para asesoría">
-              <button onClick={imprimirInformeAsesoria} onMouseEnter={() => setHoveredButton("exportar-pdf-asesoria")} onMouseLeave={() => setHoveredButton(null)} style={{ ...primaryButtonStyle("exportar-pdf-asesoria", hoveredButton), marginBottom: 14 }}>Exportar PDF Asesoría</button>
-              <Table headers={["Empleado", "Importe (€)"]} rows={informeAsesoria.map((r) => [r.empleado, euros(r.importe)])} />
-            </Box>
+            <Box title="Resumen para asesoría"><Table headers={["Empleado", "Importe (€)"]} rows={informeAsesoria.map((r) => [r.empleado, euros(r.importe)])} /></Box>
           </>
         )}
 
         {tab === "acumulado" && <Box title="Acumulado por proyecto"><Table headers={["Proyecto", "Km acumulados", "Importe acumulado", "Registros"]} rows={acumuladoPorProyecto.map((r) => [<ProjectBadge key={r.proyectoId} proyectoId={r.proyectoId} proyecto={r.proyecto} />, numero(r.km), euros(r.importe), r.registros])} /></Box>}
 
         {tab === "historico" && (
-          <Box title={esEmpleado ? "Mi histórico" : "Histórico de registros"}>
+          <Box title="Histórico de registros">
             <div style={gridFiltersStyle}>
               <Field label="Mes"><select value={filtrosHistorico.mes} onChange={(e) => cambiarFiltroHistorico("mes", e.target.value)} style={compactInputStyle}><option value="">Todos</option>{meses.map((m) => <option key={m.value} value={m.value}>{m.label}</option>)}</select></Field>
               <Field label="Año"><select value={filtrosHistorico.anio} onChange={(e) => cambiarFiltroHistorico("anio", e.target.value)} style={compactInputStyle}><option value="">Todos</option><option value="2026">2026</option><option value="2027">2027</option><option value="2028">2028</option></select></Field>
-              {!esEmpleado && <Field label="Empleado"><select value={filtrosHistorico.empleadoId} onChange={(e) => cambiarFiltroHistorico("empleadoId", e.target.value)} style={compactInputStyle}><option value="">Todos</option>{empleadosParaSelector.map((e) => <option key={e.id} value={e.id}>{e.nombre}</option>)}</select></Field>}
+              <Field label="Empleado"><select value={filtrosHistorico.empleadoId} onChange={(e) => cambiarFiltroHistorico("empleadoId", e.target.value)} style={compactInputStyle}><option value="">Todos</option>{empleadosFormulario.map((e) => <option key={e.id} value={e.id}>{e.nombre}</option>)}</select></Field>
               <Field label="Proyecto"><select value={filtrosHistorico.proyectoId} onChange={(e) => cambiarFiltroHistorico("proyectoId", e.target.value)} style={compactInputStyle}><option value="">Todos</option>{proyectosApp.map((p) => <option key={p.id} value={p.id}>{p.nombre}</option>)}</select></Field>
             </div>
             <button onClick={limpiarFiltrosHistorico} onMouseEnter={() => setHoveredButton("limpiar-filtros")} onMouseLeave={() => setHoveredButton(null)} style={secondaryButtonStyle("limpiar-filtros", hoveredButton)}>Limpiar filtros</button>
@@ -1208,6 +1158,40 @@ export default function App() {
         {tab === "empleados" && <Box title="Empleados"><Table headers={["ID", "Empleado", "Email", "Rol", "€/KM", "Activo"]} rows={empleadosApp.map((e) => [e.id, e.nombre, e.email || "", e.rol || "", euros(e.precioKm), e.activo ? "Sí" : "No"])} /></Box>}
       </div>
     </div>
+  );
+}
+
+function AccessShieldIcon() {
+  return (
+    <svg width="28" height="28" viewBox="0 0 28 28" fill="none" aria-hidden="true">
+      <path d="M14 3.5L23 7.2V13.4C23 19.1 19.2 24.2 14 25.6C8.8 24.2 5 19.1 5 13.4V7.2L14 3.5Z" fill="url(#shieldGradient)"/>
+      <path d="M10.4 14.1L12.8 16.5L17.9 11.2" stroke="white" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/>
+      <defs>
+        <linearGradient id="shieldGradient" x1="5" y1="3.5" x2="24" y2="25" gradientUnits="userSpaceOnUse">
+          <stop stopColor="#60a5fa"/>
+          <stop offset="1" stopColor="#1d4ed8"/>
+        </linearGradient>
+      </defs>
+    </svg>
+  );
+}
+
+function UserAccessIcon() {
+  return (
+    <svg width="28" height="28" viewBox="0 0 28 28" fill="none" aria-hidden="true">
+      <circle cx="14" cy="10" r="4.5" fill="#60a5fa"/>
+      <path d="M6.5 23C7.4 18.7 10.1 16.4 14 16.4C17.9 16.4 20.6 18.7 21.5 23" stroke="white" strokeWidth="2.4" strokeLinecap="round"/>
+      <path d="M21.2 5.6V10.2M18.9 7.9H23.5" stroke="#a7f3d0" strokeWidth="2" strokeLinecap="round"/>
+    </svg>
+  );
+}
+
+function AdminKeyIcon() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+      <circle cx="7" cy="10" r="3.2" stroke="#64748b" strokeWidth="1.8"/>
+      <path d="M10.2 10H18M14.2 10V12.3M16.5 10V11.7" stroke="#64748b" strokeWidth="1.8" strokeLinecap="round"/>
+    </svg>
   );
 }
 
@@ -1229,31 +1213,239 @@ function Table({ headers, rows, alignments = [] }) {
 }
 
 const pageStyle = { minHeight: "100vh", background: "linear-gradient(180deg, #f8fafc 0%, #eef2ff 100%)", padding: 24, fontFamily: "Arial, sans-serif", color: "#0f172a" };
-const loginPageStyle = { minHeight: "100vh", display: "grid", placeItems: "center", position: "relative", overflow: "hidden", background: "linear-gradient(180deg, #f8fafc 0%, #eef2ff 100%)", padding: 24, fontFamily: "Arial, sans-serif", color: "#0f172a" };
-const loginCardStyle = { width: "100%", maxWidth: 560, position: "relative", zIndex: 1, background: "rgba(255, 255, 255, 0.96)", backdropFilter: "blur(22px)", border: "1px solid rgba(226, 232, 240, 0.95)", borderRadius: 30, padding: 34, boxShadow: "0 30px 90px rgba(15, 23, 42, 0.26)", display: "grid", gap: 18, overflow: "hidden" };
-const loginIconStyle = { width: 64, height: 64, display: "grid", placeItems: "center", borderRadius: 22, background: "linear-gradient(135deg, #0f172a, #2563eb)", border: "1px solid rgba(147, 197, 253, 0.55)", boxShadow: "0 16px 34px rgba(37, 99, 235, 0.28)", color: "white" };
-const loginTitleStyle = { margin: "0", fontSize: 32, letterSpacing: -0.9, color: "#0f172a", lineHeight: 1.08 };
-const loginSubtitleStyle = { margin: "9px 0 2px", color: "#475569", lineHeight: 1.55, fontSize: 15 };
-const loginInputStyle = { width: "100%", boxSizing: "border-box", border: "1px solid #cbd5e1", borderRadius: 16, padding: "14px 15px", fontSize: 15, background: "#ffffff", outline: "none", boxShadow: "0 1px 2px rgba(15, 23, 42, 0.04)", color: "#0f172a" };
-const loginButtonStyle = { border: "1px solid #1d4ed8", borderRadius: 16, padding: "15px 18px", background: "linear-gradient(135deg, #1e293b, #2563eb)", color: "#ffffff", fontWeight: 800, letterSpacing: "0.1px", cursor: "pointer", boxShadow: "0 16px 28px rgba(37, 99, 235, 0.24)" };
-const loginErrorStyle = { background: "#fee2e2", border: "1px solid #fecaca", color: "#991b1b", padding: 12, borderRadius: 14, fontSize: 14 };
-const loginDecorOneStyle = { display: "none" };
-const loginDecorTwoStyle = { display: "none" };
-const loginTopLineStyle = { display: "flex", alignItems: "center", justifyContent: "space-between", gap: 14 };
-const loginBadgeStyle = { display: "inline-flex", alignItems: "center", borderRadius: 999, padding: "7px 12px", background: "#eff6ff", color: "#1e3a8a", border: "1px solid #bfdbfe", fontSize: 12, fontWeight: 800, letterSpacing: "0.25px", textTransform: "uppercase" };
-const employeeAccessPanelStyle = { background: "linear-gradient(135deg, #f8fafc, #eff6ff)", border: "1px solid #bfdbfe", borderRadius: 22, padding: 18, display: "grid", gap: 10, boxShadow: "0 10px 24px rgba(37, 99, 235, 0.08)" };
-const adminAccessPanelStyle = { background: "linear-gradient(135deg, #ffffff, #f8fafc)", border: "1px solid #e2e8f0", borderRadius: 22, padding: 18, display: "grid", gap: 11, boxShadow: "0 10px 24px rgba(15, 23, 42, 0.06)" };
-const adminHeaderStyle = { display: "flex", alignItems: "center", gap: 8, color: "#475569", fontSize: 13, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.25px" };
-const loginSecondaryButtonStyle = { border: "1px solid #cbd5e1", borderRadius: 16, padding: "13px 16px", background: "linear-gradient(135deg, #0f172a, #334155)", color: "#ffffff", fontWeight: 800, cursor: "pointer", boxShadow: "0 12px 24px rgba(15, 23, 42, 0.16)" };
-const loginGhostButtonStyle = { border: "1px solid #e2e8f0", borderRadius: 14, background: "#ffffff", color: "#475569", fontWeight: 800, cursor: "pointer", padding: "11px 16px", justifySelf: "stretch" };
+const loginPageStyle = {
+  minHeight: "100vh",
+  display: "grid",
+  placeItems: "center",
+  background: "radial-gradient(circle at 18% 12%, rgba(191, 219, 254, 0.42), transparent 30%), radial-gradient(circle at 86% 16%, rgba(204, 251, 241, 0.34), transparent 28%), linear-gradient(180deg, #f8fafc 0%, #eef2ff 100%)",
+  padding: 24,
+  fontFamily: "Arial, sans-serif",
+  color: "#0f172a",
+  position: "relative",
+  overflow: "hidden",
+};
+
+const accessGlowOneStyle = {
+  position: "fixed",
+  width: 320,
+  height: 320,
+  borderRadius: "50%",
+  background: "rgba(96, 165, 250, 0.16)",
+  filter: "blur(32px)",
+  left: -120,
+  top: -80,
+  pointerEvents: "none",
+};
+
+const accessGlowTwoStyle = {
+  position: "fixed",
+  width: 280,
+  height: 280,
+  borderRadius: "50%",
+  background: "rgba(45, 212, 191, 0.12)",
+  filter: "blur(34px)",
+  right: -90,
+  bottom: -90,
+  pointerEvents: "none",
+};
+
+const accessShellStyle = {
+  width: "100%",
+  maxWidth: 690,
+  background: "rgba(255, 255, 255, 0.88)",
+  border: "1px solid rgba(203, 213, 225, 0.85)",
+  borderRadius: 30,
+  padding: "34px 40px",
+  boxShadow: "0 26px 70px rgba(15, 23, 42, 0.13)",
+  display: "grid",
+  gap: 24,
+  position: "relative",
+  backdropFilter: "blur(16px)",
+};
+
+const accessBrandRowStyle = {
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "space-between",
+  gap: 16,
+};
+
+const accessIconStyle = {
+  width: 58,
+  height: 58,
+  display: "grid",
+  placeItems: "center",
+  borderRadius: 20,
+  background: "linear-gradient(145deg, #eff6ff, #dbeafe)",
+  border: "1px solid #bfdbfe",
+  boxShadow: "0 18px 38px rgba(59, 130, 246, 0.18)",
+};
+
+const accessBadgeStyle = {
+  display: "inline-flex",
+  alignItems: "center",
+  justifyContent: "center",
+  padding: "9px 16px",
+  borderRadius: 999,
+  background: "rgba(248, 250, 252, 0.92)",
+  border: "1px solid #cbd5e1",
+  color: "#334155",
+  fontSize: 12,
+  fontWeight: 800,
+  letterSpacing: "0.7px",
+  textTransform: "uppercase",
+};
+
+const accessHeaderBlockStyle = {
+  textAlign: "center",
+  display: "grid",
+  gap: 8,
+};
+
+const accessTitleStyle = {
+  margin: 0,
+  color: "#0f172a",
+  fontSize: 36,
+  fontWeight: 600,
+  letterSpacing: "-1px",
+};
+
+const accessSubtitleStyle = {
+  margin: 0,
+  color: "#475569",
+  fontSize: 16,
+  lineHeight: 1.55,
+};
+
+const accessFieldStyle = {
+  display: "grid",
+  gap: 9,
+};
+
+const accessLabelStyle = {
+  fontSize: 13,
+  fontWeight: 700,
+  color: "#334155",
+  letterSpacing: "0.1px",
+};
+
+const accessInputStyle = {
+  width: "100%",
+  boxSizing: "border-box",
+  border: "1px solid #cbd5e1",
+  borderRadius: 15,
+  padding: "14px 16px",
+  minHeight: 52,
+  fontSize: 16,
+  background: "rgba(255, 255, 255, 0.96)",
+  color: "#0f172a",
+  outline: "none",
+  boxShadow: "inset 0 1px 2px rgba(15, 23, 42, 0.04)",
+};
+
+const accessPrimaryButtonStyle = {
+  border: "1px solid #1e40af",
+  borderRadius: 15,
+  padding: "14px 18px",
+  minHeight: 52,
+  background: "#1d4ed8",
+  color: "#ffffff",
+  fontWeight: 700,
+  fontSize: 16,
+  letterSpacing: "0.1px",
+  cursor: "pointer",
+  boxShadow: "0 14px 28px rgba(37, 99, 235, 0.22)",
+};
+
+const employeeAccessPanelStyle = {
+  display: "grid",
+  gap: 14,
+  background: "linear-gradient(180deg, rgba(239, 246, 255, 0.9), rgba(248, 250, 252, 0.92))",
+  border: "1px solid #bfdbfe",
+  borderRadius: 24,
+  padding: 22,
+  boxShadow: "0 14px 32px rgba(59, 130, 246, 0.08)",
+};
+
+const adminAccessPanelStyle = {
+  display: "grid",
+  gap: 14,
+  background: "rgba(248, 250, 252, 0.72)",
+  border: "1px solid #dbe3ef",
+  borderRadius: 24,
+  padding: 22,
+  boxShadow: "0 12px 28px rgba(15, 23, 42, 0.06)",
+};
+
+const panelHeaderRowStyle = {
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "space-between",
+  gap: 14,
+};
+
+const panelTitleStyle = {
+  color: "#1e293b",
+  fontSize: 15,
+  fontWeight: 800,
+  letterSpacing: "0.2px",
+};
+
+const panelHintStyle = {
+  color: "#64748b",
+  fontSize: 13,
+  marginTop: 3,
+};
+
+const adminHeaderStyle = {
+  display: "inline-flex",
+  alignItems: "center",
+  gap: 8,
+  color: "#475569",
+  fontSize: 14,
+  fontWeight: 800,
+  textTransform: "uppercase",
+  letterSpacing: "0.5px",
+};
+
+const accessAdminButtonStyle = {
+  border: "1px solid #cbd5e1",
+  borderRadius: 15,
+  padding: "13px 18px",
+  minHeight: 50,
+  background: "#ffffff",
+  color: "#334155",
+  fontWeight: 700,
+  fontSize: 15,
+  cursor: "pointer",
+  boxShadow: "0 8px 18px rgba(15, 23, 42, 0.06)",
+};
+
+const accessGhostButtonStyle = {
+  border: "1px solid #dbe3ef",
+  borderRadius: 15,
+  padding: "12px 16px",
+  background: "rgba(255, 255, 255, 0.72)",
+  color: "#475569",
+  fontWeight: 700,
+  cursor: "pointer",
+};
+
+const loginErrorStyle = {
+  background: "#fef2f2",
+  border: "1px solid #fecaca",
+  color: "#991b1b",
+  padding: 12,
+  borderRadius: 14,
+  fontSize: 14,
+};
+
 const containerStyle = { maxWidth: 1250, margin: "0 auto" };
 const headerStyle = { display: "flex", justifyContent: "space-between", gap: 16, alignItems: "flex-start", marginBottom: 24 };
 const navStyle = { display: "flex", gap: 8, marginBottom: 20, flexWrap: "wrap" };
 const gridFiltersStyle = { display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 12, marginBottom: 16 };
 const registroFormGridStyle = { display: "grid", gridTemplateColumns: "1fr", gap: 12, maxWidth: 880, margin: "0 auto", alignItems: "start" };
 const registroTwoColumnsStyle = { display: "grid", gridTemplateColumns: "minmax(180px, 260px) minmax(260px, 1fr)", gap: 12 };
-const registroEqualTwoColumnsStyle = { display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: 12 };
-const informeTopGridStyle = { display: "grid", gridTemplateColumns: "minmax(360px, 1fr) minmax(360px, 1fr)", gap: 18, alignItems: "stretch" };
 const registroKmResumenStyle = { display: "grid", gridTemplateColumns: "minmax(160px, 220px) minmax(150px, 1fr) minmax(150px, 1fr)", gap: 12, alignItems: "end" };
 const resumenCalculoStyle = { minHeight: 42, boxSizing: "border-box", padding: "7px 12px", background: "#F8FAFC", border: "1px solid #E2E8F0", borderRadius: 11 };
 const periodControlsStyle = { display: "flex", justifyContent: "center", alignItems: "end", gap: 16, flexWrap: "wrap", marginBottom: 4 };
