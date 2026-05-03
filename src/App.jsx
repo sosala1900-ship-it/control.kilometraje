@@ -1029,7 +1029,7 @@ export default function App() {
 
         {mensaje && <div style={messageStyle}>{mensaje}</div>}
 
-        {(tab === "dashboard" || tab === "informe" || tab === "horas") && (
+        {(tab === "dashboard" || tab === "horas") && (
           <Box title="Periodo de trabajo">
             <div style={periodControlsStyle}>
               <div style={{ width: 180 }}>
@@ -1133,14 +1133,37 @@ export default function App() {
 
         {tab === "informe" && (
           <>
-            <Box title="Informe mensual">
-              <p>Total km: <strong>{numero(totalesMes.km)} km</strong></p>
-              <p>Importe total: <strong>{euros(totalesMes.importe)}</strong></p>
-              <button onClick={imprimirInformeAsesoria} onMouseEnter={() => setHoveredButton("exportar-pdf-asesoria")} onMouseLeave={() => setHoveredButton(null)} style={{ ...primaryButtonStyle("exportar-pdf-asesoria", hoveredButton), marginTop: 10 }}>Exportar PDF Asesoría</button>
-            </Box>
+            <div style={informeTopGridStyle}>
+              <Box title="Periodo de trabajo">
+                <div style={periodControlsStyle}>
+                  <div style={{ width: 180 }}>
+                    <Field label="Mes">
+                      <select value={mes} onChange={(e) => setMes(e.target.value)} style={compactInputStyle}>
+                        {meses.map((m) => <option key={m.value} value={m.value}>{m.label}</option>)}
+                      </select>
+                    </Field>
+                  </div>
+                  <div style={{ width: 120 }}>
+                    <Field label="Año">
+                      <select value={anio} onChange={(e) => setAnio(e.target.value)} style={compactInputStyle}>
+                        <option value="2026">2026</option>
+                        <option value="2027">2027</option>
+                        <option value="2028">2028</option>
+                      </select>
+                    </Field>
+                  </div>
+                </div>
+              </Box>
+
+              <Box title="Informe mensual">
+                <p>Total km: <strong>{numero(totalesMes.km)} km</strong></p>
+                <p>Importe total: <strong>{euros(totalesMes.importe)}</strong></p>
+              </Box>
+            </div>
+
             <Box title="Resumen por proyecto"><Table headers={["Proyecto", "Km", "Importe", "Registros"]} rows={porProyectoMes.map((r) => [<ProjectBadge key={r.proyectoId} proyectoId={r.proyectoId} proyecto={r.proyecto} />, numero(r.km), euros(r.importe), r.registros])} /></Box>
             <Box title="Resumen por empleado"><Table headers={["Empleado", "Km", "Importe", "Registros"]} rows={porEmpleadoMes.map((r) => [r.empleado, numero(r.km), euros(r.importe), r.registros])} /></Box>
-            <Box title="Resumen para asesoría"><Table headers={["Empleado", "Importe (€)"]} rows={informeAsesoria.map((r) => [r.empleado, euros(r.importe)])} /></Box>
+            <Box title="Resumen para asesoría"><button onClick={imprimirInformeAsesoria} onMouseEnter={() => setHoveredButton("exportar-pdf-asesoria")} onMouseLeave={() => setHoveredButton(null)} style={{ ...primaryButtonStyle("exportar-pdf-asesoria", hoveredButton), marginBottom: 14 }}>Exportar PDF Asesoría</button><Table headers={["Empleado", "Importe (€)"]} rows={informeAsesoria.map((r) => [r.empleado, euros(r.importe)])} /></Box>
           </>
         )}
 
@@ -1484,6 +1507,7 @@ const miniCardsGridStyle = { display: "grid", gridTemplateColumns: "repeat(2, mi
 const miniCardStyle = { background: "rgba(255, 255, 255, 0.85)", border: "1px solid #dbeafe", borderRadius: 14, padding: 14, display: "grid", gap: 6, color: "#334155" };
 const cardsGridStyle = { display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 14, marginBottom: 20 };
 const twoColumnsStyle = { display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(420px, 1fr))", gap: 18 };
+const informeTopGridStyle = { display: "grid", gridTemplateColumns: "minmax(320px, 0.9fr) minmax(320px, 1.1fr)", gap: 18, alignItems: "stretch" };
 const cardStyle = { background: "rgba(255, 255, 255, 0.94)", padding: 20, borderRadius: 18, border: "1px solid #e2e8f0", boxShadow: "0 12px 28px rgba(15, 23, 42, 0.07)", transition: "all 0.2s ease" };
 const boxStyle = { background: "rgba(255, 255, 255, 0.96)", padding: 22, borderRadius: 18, border: "1px solid #e2e8f0", marginBottom: 20, boxShadow: "0 14px 32px rgba(15, 23, 42, 0.06)" };
 const inputStyle = { width: "100%", boxSizing: "border-box", border: "1px solid #cbd5e1", borderRadius: 12, padding: "11px 12px", fontSize: 14, background: "white", outline: "none" };
