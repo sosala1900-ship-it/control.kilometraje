@@ -1156,8 +1156,16 @@ export default function App() {
               </Box>
 
               <Box title="Informe mensual">
-                <p>Total km: <strong>{numero(totalesMes.km)} km</strong></p>
-                <p>Importe total: <strong>{euros(totalesMes.importe)}</strong></p>
+                <div style={informeMensualResumenStyle}>
+                  <div style={informeMetricCardStyle}>
+                    <span style={informeMetricLabelStyle}>Total km</span>
+                    <strong style={informeMetricValueStyle}>{numero(totalesMes.km)} km</strong>
+                  </div>
+                  <div style={informeMetricCardStyle}>
+                    <span style={informeMetricLabelStyle}>Importe total</span>
+                    <strong style={informeMetricValueStyle}>{euros(totalesMes.importe)}</strong>
+                  </div>
+                </div>
               </Box>
             </div>
 
@@ -1507,7 +1515,11 @@ const miniCardsGridStyle = { display: "grid", gridTemplateColumns: "repeat(2, mi
 const miniCardStyle = { background: "rgba(255, 255, 255, 0.85)", border: "1px solid #dbeafe", borderRadius: 14, padding: 14, display: "grid", gap: 6, color: "#334155" };
 const cardsGridStyle = { display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 14, marginBottom: 20 };
 const twoColumnsStyle = { display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(420px, 1fr))", gap: 18 };
-const informeTopGridStyle = { display: "grid", gridTemplateColumns: "minmax(320px, 0.9fr) minmax(320px, 1.1fr)", gap: 18, alignItems: "stretch" };
+const informeTopGridStyle = { display: "grid", gridTemplateColumns: "minmax(320px, 0.9fr) minmax(320px, 1.1fr)", gap: 18, alignItems: "start" };
+const informeMensualResumenStyle = { display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: 12, alignItems: "stretch" };
+const informeMetricCardStyle = { background: "#f8fafc", border: "1px solid #e2e8f0", borderRadius: 14, padding: "16px 14px", display: "grid", gap: 6, justifyItems: "center", textAlign: "center" };
+const informeMetricLabelStyle = { fontSize: 12, color: "#64748b", fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.3 };
+const informeMetricValueStyle = { fontSize: 22, color: "#0f172a", fontWeight: 800, letterSpacing: -0.3 };
 const cardStyle = { background: "rgba(255, 255, 255, 0.94)", padding: 20, borderRadius: 18, border: "1px solid #e2e8f0", boxShadow: "0 12px 28px rgba(15, 23, 42, 0.07)", transition: "all 0.2s ease" };
 const boxStyle = { background: "rgba(255, 255, 255, 0.96)", padding: 22, borderRadius: 18, border: "1px solid #e2e8f0", marginBottom: 20, boxShadow: "0 14px 32px rgba(15, 23, 42, 0.06)" };
 const inputStyle = { width: "100%", boxSizing: "border-box", border: "1px solid #cbd5e1", borderRadius: 12, padding: "11px 12px", fontSize: 14, background: "white", outline: "none" };
