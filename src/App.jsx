@@ -351,6 +351,36 @@ function agruparPorProyecto(registros) {
   return Object.values(map).sort((a, b) => b.km - a.km);
 }
 
+function AccessShieldIcon() {
+  return (
+    <svg width="34" height="34" viewBox="0 0 48 48" fill="none" aria-hidden="true">
+      <path d="M24 5.5L38 10.6V21.4C38 31.1 32.2 39.8 24 43C15.8 39.8 10 31.1 10 21.4V10.6L24 5.5Z" fill="#dbeafe" stroke="#2563eb" strokeWidth="2.2" />
+      <path d="M18.5 24.2L22.3 28L30.2 19.5" stroke="#1e3a8a" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+function UserAccessIcon() {
+  return (
+    <svg width="34" height="34" viewBox="0 0 48 48" fill="none" aria-hidden="true">
+      <circle cx="24" cy="18" r="7" fill="#dbeafe" stroke="#2563eb" strokeWidth="2.2" />
+      <path d="M12.5 39C14.3 32.6 18.6 29.5 24 29.5C29.4 29.5 33.7 32.6 35.5 39" fill="#eff6ff" />
+      <path d="M12.5 39C14.3 32.6 18.6 29.5 24 29.5C29.4 29.5 33.7 32.6 35.5 39" stroke="#1e3a8a" strokeWidth="2.2" strokeLinecap="round" />
+      <path d="M34 13.5H39.5M36.8 10.8V16.2" stroke="#0f766e" strokeWidth="2.2" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+function AdminKeyIcon() {
+  return (
+    <svg width="22" height="22" viewBox="0 0 32 32" fill="none" aria-hidden="true">
+      <circle cx="11" cy="16" r="5.5" fill="#f8fafc" stroke="#475569" strokeWidth="2" />
+      <path d="M16.5 16H28M22 16V20M25.5 16V19" stroke="#475569" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+      <circle cx="11" cy="16" r="1.5" fill="#475569" />
+    </svg>
+  );
+}
+
 export default function App() {
   const hoy = new Date();
 
@@ -881,12 +911,21 @@ export default function App() {
   if (!accesoAutorizado) {
     return (
       <div style={loginPageStyle}>
+        <div style={loginDecorOneStyle} />
+        <div style={loginDecorTwoStyle} />
         <form onSubmit={accederApp} style={loginCardStyle}>
-          <div style={loginIconStyle}>🔒</div>
-          <h1 style={loginTitleStyle}>Control de Kilometraje</h1>
-          <p style={loginSubtitleStyle}>Introduce la contraseña para acceder a la app interna.</p>
+          <div style={loginTopLineStyle}>
+            <div style={loginIconStyle}><AccessShieldIcon /></div>
+            <span style={loginBadgeStyle}>Acceso interno</span>
+          </div>
+
+          <div>
+            <h1 style={loginTitleStyle}>Control de Kilometraje</h1>
+            <p style={loginSubtitleStyle}>Fundación Canaria Imagine 2050 · Kilometraje y horas complementarias.</p>
+          </div>
+
           <label style={{ display: "grid", gap: 8 }}>
-            <span style={{ fontSize: 13, fontWeight: 600, color: "#334155" }}>Contraseña</span>
+            <span style={{ fontSize: 13, fontWeight: 700, color: "#334155" }}>Contraseña general</span>
             <input
               type="password"
               value={passwordAcceso}
@@ -894,13 +933,13 @@ export default function App() {
                 setPasswordAcceso(e.target.value);
                 setErrorAcceso("");
               }}
-              placeholder="Contraseña de acceso"
+              placeholder="Introduce la contraseña"
               autoFocus
               style={loginInputStyle}
             />
           </label>
           {errorAcceso && <div style={loginErrorStyle}>{errorAcceso}</div>}
-          <button type="submit" style={loginButtonStyle}>Entrar</button>
+          <button type="submit" style={loginButtonStyle}>Acceder a la app</button>
         </form>
       </div>
     );
@@ -909,31 +948,45 @@ export default function App() {
   if (!modoAcceso) {
     return (
       <div style={loginPageStyle}>
+        <div style={loginDecorOneStyle} />
+        <div style={loginDecorTwoStyle} />
         <div style={loginCardStyle}>
-          <div style={loginIconStyle}>👤</div>
-          <h1 style={loginTitleStyle}>Selecciona usuario</h1>
-          <p style={loginSubtitleStyle}>Elige tu nombre para ver solo tus registros. El acceso de administrador está separado.</p>
+          <div style={loginTopLineStyle}>
+            <div style={loginIconStyle}><UserAccessIcon /></div>
+            <span style={loginBadgeStyle}>Identificación</span>
+          </div>
+
+          <div>
+            <h1 style={loginTitleStyle}>Selecciona tu perfil</h1>
+            <p style={loginSubtitleStyle}>El empleado solo verá sus registros. El acceso administrador queda protegido con una segunda contraseña.</p>
+          </div>
 
           {mensaje && <div style={messageStyle}>{mensaje}</div>}
 
-          <label style={{ display: "grid", gap: 8 }}>
-            <span style={{ fontSize: 13, fontWeight: 600, color: "#334155" }}>Empleado</span>
-            <select
-              value=""
-              onChange={(e) => seleccionarEmpleado(e.target.value)}
-              style={loginInputStyle}
-              disabled={cargando || empleadosApp.length === 0}
-            >
-              <option value="">{cargando ? "Cargando empleados..." : "Selecciona empleado"}</option>
-              {empleadosApp.map((e) => (
-                <option key={e.id} value={e.id}>{e.nombre}</option>
-              ))}
-            </select>
-          </label>
-
-          <form onSubmit={accederComoAdmin} style={{ display: "grid", gap: 10, marginTop: 6 }}>
+          <div style={employeeAccessPanelStyle}>
             <label style={{ display: "grid", gap: 8 }}>
-              <span style={{ fontSize: 13, fontWeight: 600, color: "#334155" }}>Acceso administrador</span>
+              <span style={{ fontSize: 13, fontWeight: 700, color: "#334155" }}>Entrar como empleado</span>
+              <select
+                value=""
+                onChange={(e) => seleccionarEmpleado(e.target.value)}
+                style={loginInputStyle}
+                disabled={cargando || empleadosApp.length === 0}
+              >
+                <option value="">{cargando ? "Cargando empleados..." : "Selecciona tu nombre"}</option>
+                {empleadosApp.map((e) => (
+                  <option key={e.id} value={e.id}>{e.nombre}</option>
+                ))}
+              </select>
+            </label>
+          </div>
+
+          <form onSubmit={accederComoAdmin} style={adminAccessPanelStyle}>
+            <div style={adminHeaderStyle}>
+              <AdminKeyIcon />
+              <span>Acceso administrador</span>
+            </div>
+            <label style={{ display: "grid", gap: 8 }}>
+              <span style={{ fontSize: 13, fontWeight: 700, color: "#334155" }}>Contraseña de administrador</span>
               <input
                 type="password"
                 value={passwordAdmin}
@@ -941,16 +994,16 @@ export default function App() {
                   setPasswordAdmin(e.target.value);
                   setErrorAdmin("");
                 }}
-                placeholder="Contraseña de administrador"
+                placeholder="Introduce la clave admin"
                 style={loginInputStyle}
               />
             </label>
             {errorAdmin && <div style={loginErrorStyle}>{errorAdmin}</div>}
-            <button type="submit" style={loginButtonStyle}>Entrar como administrador</button>
+            <button type="submit" style={loginSecondaryButtonStyle}>Entrar como administrador</button>
           </form>
 
-          <button type="button" onClick={cerrarSesion} style={secondaryButtonStyle("volver-login", hoveredButton)}>
-            Salir
+          <button type="button" onClick={cerrarSesion} style={loginGhostButtonStyle}>
+            Cerrar acceso
           </button>
         </div>
       </div>
@@ -968,9 +1021,6 @@ export default function App() {
           <div style={{ display: "flex", gap: 10, flexWrap: "wrap", justifyContent: "flex-end" }}>
             <button onClick={cargarDatos} disabled={cargando} onMouseEnter={() => setHoveredButton("actualizar")} onMouseLeave={() => setHoveredButton(null)} style={buttonStyle(false, "actualizar", hoveredButton)}>
               {cargando ? "Cargando..." : "Actualizar datos"}
-            </button>
-            <button onClick={cambiarUsuario} onMouseEnter={() => setHoveredButton("cambiar-usuario")} onMouseLeave={() => setHoveredButton(null)} style={secondaryButtonStyle("cambiar-usuario", hoveredButton)}>
-              Cambiar usuario
             </button>
             <button onClick={cerrarSesion} onMouseEnter={() => setHoveredButton("cerrar-sesion")} onMouseLeave={() => setHoveredButton(null)} style={secondaryButtonStyle("cerrar-sesion", hoveredButton)}>
               Cerrar acceso
@@ -1173,14 +1223,23 @@ function Table({ headers, rows, alignments = [] }) {
 }
 
 const pageStyle = { minHeight: "100vh", background: "linear-gradient(180deg, #f8fafc 0%, #eef2ff 100%)", padding: 24, fontFamily: "Arial, sans-serif", color: "#0f172a" };
-const loginPageStyle = { minHeight: "100vh", display: "grid", placeItems: "center", background: "linear-gradient(180deg, #f8fafc 0%, #eef2ff 100%)", padding: 24, fontFamily: "Arial, sans-serif", color: "#0f172a" };
-const loginCardStyle = { width: "100%", maxWidth: 420, background: "rgba(255, 255, 255, 0.96)", border: "1px solid #e2e8f0", borderRadius: 22, padding: 28, boxShadow: "0 18px 42px rgba(15, 23, 42, 0.10)", display: "grid", gap: 16 };
-const loginIconStyle = { width: 46, height: 46, display: "grid", placeItems: "center", borderRadius: 16, background: "#dbeafe", border: "1px solid #bfdbfe", fontSize: 22 };
-const loginTitleStyle = { margin: "0", fontSize: 28, letterSpacing: -0.4 };
-const loginSubtitleStyle = { margin: "-8px 0 4px", color: "#64748b", lineHeight: 1.45 };
-const loginInputStyle = { width: "100%", boxSizing: "border-box", border: "1px solid #cbd5e1", borderRadius: 13, padding: "12px 13px", fontSize: 15, background: "white", outline: "none" };
-const loginButtonStyle = { border: "1px solid #bfdbfe", borderRadius: 14, padding: "13px 18px", background: "linear-gradient(135deg, #dbeafe, #bfdbfe)", color: "#1e3a8a", fontWeight: 600, letterSpacing: "0.1px", cursor: "pointer", boxShadow: "0 4px 12px rgba(37, 99, 235, 0.08)" };
-const loginErrorStyle = { background: "#fee2e2", border: "1px solid #fecaca", color: "#991b1b", padding: 11, borderRadius: 12, fontSize: 14 };
+const loginPageStyle = { minHeight: "100vh", display: "grid", placeItems: "center", position: "relative", overflow: "hidden", background: "radial-gradient(circle at top left, #dbeafe 0, transparent 34%), radial-gradient(circle at bottom right, #ccfbf1 0, transparent 30%), linear-gradient(135deg, #f8fafc 0%, #eef2ff 100%)", padding: 24, fontFamily: "Arial, sans-serif", color: "#0f172a" };
+const loginCardStyle = { width: "100%", maxWidth: 460, position: "relative", zIndex: 1, background: "rgba(255, 255, 255, 0.88)", backdropFilter: "blur(18px)", border: "1px solid rgba(255, 255, 255, 0.72)", borderRadius: 28, padding: 30, boxShadow: "0 24px 70px rgba(15, 23, 42, 0.14)", display: "grid", gap: 18 };
+const loginIconStyle = { width: 56, height: 56, display: "grid", placeItems: "center", borderRadius: 20, background: "linear-gradient(135deg, #eff6ff, #dbeafe)", border: "1px solid #bfdbfe", boxShadow: "0 10px 24px rgba(37, 99, 235, 0.12)" };
+const loginTitleStyle = { margin: "0", fontSize: 30, letterSpacing: -0.7, color: "#0f172a" };
+const loginSubtitleStyle = { margin: "8px 0 2px", color: "#64748b", lineHeight: 1.5, fontSize: 14 };
+const loginInputStyle = { width: "100%", boxSizing: "border-box", border: "1px solid #cbd5e1", borderRadius: 15, padding: "13px 14px", fontSize: 15, background: "rgba(255, 255, 255, 0.95)", outline: "none", boxShadow: "inset 0 1px 2px rgba(15, 23, 42, 0.04)" };
+const loginButtonStyle = { border: "1px solid #93c5fd", borderRadius: 16, padding: "14px 18px", background: "linear-gradient(135deg, #2563eb, #1d4ed8)", color: "#ffffff", fontWeight: 700, letterSpacing: "0.1px", cursor: "pointer", boxShadow: "0 12px 24px rgba(37, 99, 235, 0.20)" };
+const loginErrorStyle = { background: "#fee2e2", border: "1px solid #fecaca", color: "#991b1b", padding: 12, borderRadius: 14, fontSize: 14 };
+const loginDecorOneStyle = { position: "absolute", width: 280, height: 280, borderRadius: "999px", background: "rgba(37, 99, 235, 0.10)", top: -90, right: -80, filter: "blur(2px)" };
+const loginDecorTwoStyle = { position: "absolute", width: 240, height: 240, borderRadius: "999px", background: "rgba(20, 184, 166, 0.12)", bottom: -80, left: -70, filter: "blur(2px)" };
+const loginTopLineStyle = { display: "flex", alignItems: "center", justifyContent: "space-between", gap: 14 };
+const loginBadgeStyle = { display: "inline-flex", alignItems: "center", borderRadius: 999, padding: "6px 11px", background: "#f8fafc", color: "#475569", border: "1px solid #e2e8f0", fontSize: 12, fontWeight: 700, letterSpacing: "0.2px", textTransform: "uppercase" };
+const employeeAccessPanelStyle = { background: "linear-gradient(135deg, #f8fafc, #eff6ff)", border: "1px solid #dbeafe", borderRadius: 20, padding: 16, display: "grid", gap: 10 };
+const adminAccessPanelStyle = { background: "rgba(248, 250, 252, 0.88)", border: "1px solid #e2e8f0", borderRadius: 20, padding: 16, display: "grid", gap: 11 };
+const adminHeaderStyle = { display: "flex", alignItems: "center", gap: 8, color: "#475569", fontSize: 13, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.25px" };
+const loginSecondaryButtonStyle = { border: "1px solid #cbd5e1", borderRadius: 15, padding: "12px 16px", background: "linear-gradient(135deg, #ffffff, #f1f5f9)", color: "#334155", fontWeight: 700, cursor: "pointer", boxShadow: "0 6px 14px rgba(15, 23, 42, 0.06)" };
+const loginGhostButtonStyle = { border: "none", background: "transparent", color: "#64748b", fontWeight: 700, cursor: "pointer", padding: "4px 8px", justifySelf: "center" };
 const containerStyle = { maxWidth: 1250, margin: "0 auto" };
 const headerStyle = { display: "flex", justifyContent: "space-between", gap: 16, alignItems: "flex-start", marginBottom: 24 };
 const navStyle = { display: "flex", gap: 8, marginBottom: 20, flexWrap: "wrap" };
