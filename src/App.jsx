@@ -1541,8 +1541,9 @@ const adminAccessPanelStyle = {
 const panelHeaderRowStyle = {
   display: "flex",
   alignItems: "center",
-  justifyContent: "space-between",
+  justifyContent: "center",
   gap: 14,
+  textAlign: "center",
 };
 
 const panelTitleStyle = {
@@ -1561,6 +1562,7 @@ const panelHintStyle = {
 const adminHeaderStyle = {
   display: "inline-flex",
   alignItems: "center",
+  justifySelf: "center",
   gap: 8,
   color: "#475569",
   fontSize: 14,
@@ -1571,29 +1573,36 @@ const adminHeaderStyle = {
 
 const adminInlineAccessStyle = {
   display: "grid",
-  gridTemplateColumns: "minmax(0, 1fr) auto",
+  gridTemplateColumns: "1fr",
   gap: 12,
-  alignItems: "end",
+  alignItems: "center",
+  justifyItems: "center",
+  width: "100%",
+  maxWidth: 520,
+  margin: "0 auto",
 };
 
 const adminInlineFieldStyle = {
   display: "grid",
   gap: 9,
   minWidth: 0,
+  width: "100%",
 };
 
 const accessAdminButtonStyle = {
-  border: "1px solid #cbd5e1",
+  border: "1px solid #1d4ed8",
   borderRadius: 13,
-  padding: "11px 16px",
-  minHeight: 52,
-  background: "#334155",
+  padding: "11px 18px",
+  minHeight: 46,
+  width: "100%",
+  maxWidth: 220,
+  background: "#2563eb",
   color: "#ffffff",
   fontWeight: 600,
   fontSize: 14,
   whiteSpace: "nowrap",
   cursor: "pointer",
-  boxShadow: "0 8px 18px rgba(15, 23, 42, 0.12)",
+  boxShadow: "0 8px 18px rgba(37, 99, 235, 0.16)",
 };
 
 const accessGhostButtonStyle = {
