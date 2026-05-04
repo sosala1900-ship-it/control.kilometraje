@@ -993,14 +993,14 @@ export default function App() {
 
           <div style={accessHeaderBlockStyle}>
             <h1 style={accessTitleStyle}>Acceso a la aplicación</h1>
-            <p style={accessSubtitleStyle}>Selecciona tu nombre para continuar.</p>
+            <p style={accessSubtitleStyle}>Selecciona tu nombre para continuar</p>
           </div>
 
           <div style={employeeAccessPanelStyle}>
             <div style={panelHeaderRowStyle}>
               <div>
-                <div style={panelTitleStyle}>Entrada de empleado</div>
-                <div style={panelHintStyle}>Acceso personal a registros de kilometraje y horas.</div>
+                <div style={panelTitleStyle}>Acceso empleado</div>
+                <div style={panelHintStyle}>Acceso personal a registro de kilometraje y horas</div>
               </div>
             </div>
             <select
@@ -1432,6 +1432,9 @@ const accessSubtitleStyle = {
 const accessFieldStyle = {
   display: "grid",
   gap: 9,
+  width: "100%",
+  maxWidth: 360,
+  justifySelf: "center",
 };
 
 const accessLabelStyle = {
@@ -1460,6 +1463,7 @@ const passwordInputWrapStyle = {
   gridTemplateColumns: "minmax(0, 1fr) auto",
   alignItems: "center",
   width: "100%",
+  maxWidth: 360,
   boxSizing: "border-box",
   border: "1px solid #cbd5e1",
   borderRadius: 15,
@@ -1593,12 +1597,14 @@ const accessAdminButtonStyle = {
 };
 
 const accessGhostButtonStyle = {
+  justifySelf: "center",
   border: "1px solid #dbe3ef",
-  borderRadius: 15,
-  padding: "12px 16px",
-  background: "rgba(255, 255, 255, 0.72)",
-  color: "#475569",
-  fontWeight: 700,
+  borderRadius: 999,
+  padding: "8px 13px",
+  background: "rgba(255, 255, 255, 0.58)",
+  color: "#64748b",
+  fontSize: 12,
+  fontWeight: 600,
   cursor: "pointer",
 };
 
