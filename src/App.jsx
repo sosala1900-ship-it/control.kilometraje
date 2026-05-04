@@ -380,12 +380,12 @@ export default function App() {
 
   const [isMobile, setIsMobile] = useState(() => {
     if (typeof window === "undefined") return false;
-    return window.innerWidth <= 768;
+    return window.innerWidth <= 640;
   });
 
   useEffect(() => {
     function handleResize() {
-      setIsMobile(window.innerWidth <= 768);
+      setIsMobile(window.innerWidth <= 640);
     }
 
     handleResize();
