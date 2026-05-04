@@ -999,7 +999,7 @@ export default function App() {
           <div style={employeeAccessPanelStyle}>
             <div style={panelHeaderRowStyle}>
               <div>
-                <div style={panelTitleStyle}>Acceso empleado</div>
+                <div style={panelTitleStyle}>ACCESO EMPLEADO</div>
                 <div style={panelHintStyle}>Acceso personal a registro de kilometraje y horas</div>
               </div>
             </div>
@@ -1019,7 +1019,7 @@ export default function App() {
           <form onSubmit={accederComoAdmin} style={adminAccessPanelStyle}>
             <div style={adminHeaderStyle}>
               <AdminKeyIcon />
-              <span>Acceso administrador</span>
+              <span>ACCESO ADMINISTRADOR</span>
             </div>
 
             <div style={adminInlineAccessStyle}>
@@ -1549,10 +1549,11 @@ const panelHeaderRowStyle = {
 };
 
 const panelTitleStyle = {
-  color: "#1e293b",
-  fontSize: 15,
-  fontWeight: 800,
-  letterSpacing: "0.2px",
+  color: "#334155",
+  fontSize: 14,
+  fontWeight: 600,
+  letterSpacing: "0.5px",
+  textTransform: "uppercase",
 };
 
 const panelHintStyle = {
@@ -1566,9 +1567,9 @@ const adminHeaderStyle = {
   alignItems: "center",
   justifySelf: "center",
   gap: 8,
-  color: "#475569",
+  color: "#334155",
   fontSize: 14,
-  fontWeight: 800,
+  fontWeight: 600,
   textTransform: "uppercase",
   letterSpacing: "0.5px",
 };
