@@ -1446,6 +1446,8 @@ const accessLabelStyle = {
 
 const accessInputStyle = {
   width: "100%",
+  maxWidth: 450,
+  margin: "0 auto",
   boxSizing: "border-box",
   border: "1px solid #cbd5e1",
   borderRadius: 15,
@@ -1463,7 +1465,7 @@ const passwordInputWrapStyle = {
   gridTemplateColumns: "minmax(0, 1fr) auto",
   alignItems: "center",
   width: "100%",
-  maxWidth: 360,
+  maxWidth: 450,
   boxSizing: "border-box",
   border: "1px solid #cbd5e1",
   borderRadius: 15,
@@ -1578,7 +1580,7 @@ const adminInlineAccessStyle = {
   alignItems: "center",
   justifyItems: "center",
   width: "100%",
-  maxWidth: 520,
+  maxWidth: 450,
   margin: "0 auto",
 };
 
@@ -1590,19 +1592,19 @@ const adminInlineFieldStyle = {
 };
 
 const accessAdminButtonStyle = {
-  border: "1px solid #1d4ed8",
+  border: "1px solid #26354f",
   borderRadius: 13,
   padding: "11px 18px",
   minHeight: 46,
   width: "100%",
-  maxWidth: 220,
-  background: "#2563eb",
+  maxWidth: 450,
+  background: "#2f3e5c",
   color: "#ffffff",
   fontWeight: 600,
   fontSize: 14,
   whiteSpace: "nowrap",
   cursor: "pointer",
-  boxShadow: "0 8px 18px rgba(37, 99, 235, 0.16)",
+  boxShadow: "0 8px 18px rgba(47, 62, 92, 0.14)",
 };
 
 const accessGhostButtonStyle = {
