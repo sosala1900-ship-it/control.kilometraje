@@ -993,8 +993,7 @@ export default function App() {
 
           <div style={accessHeaderBlockStyle}>
             <h1 style={accessTitleStyle}>Acceso a la aplicación</h1>
-            <p style={accessSubtitleStyle}>Selecciona tu nombre para continuar</p>
-          </div>
+                     </div>
 
           <div style={employeeAccessPanelStyle}>
             <div style={panelHeaderRowStyle}>
