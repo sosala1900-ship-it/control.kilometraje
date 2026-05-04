@@ -386,6 +386,7 @@ export default function App() {
     }
   });
   const [passwordAcceso, setPasswordAcceso] = useState("");
+  const [mostrarPasswordAcceso, setMostrarPasswordAcceso] = useState(false);
   const [errorAcceso, setErrorAcceso] = useState("");
   const [modoAcceso, setModoAcceso] = useState(() => {
     try {
@@ -402,6 +403,7 @@ export default function App() {
     }
   });
   const [passwordAdmin, setPasswordAdmin] = useState("");
+  const [mostrarPasswordAdmin, setMostrarPasswordAdmin] = useState(false);
   const [errorAdmin, setErrorAdmin] = useState("");
 
   const [tab, setTab] = useState("dashboard");
@@ -546,6 +548,8 @@ export default function App() {
     setEmpleadoSesionId("");
     setPasswordAcceso("");
     setPasswordAdmin("");
+    setMostrarPasswordAcceso(false);
+    setMostrarPasswordAdmin(false);
     setErrorAcceso("");
     setErrorAdmin("");
     setMensaje("");
@@ -944,17 +948,26 @@ export default function App() {
 
           <label style={accessFieldStyle}>
             <span style={accessLabelStyle}>Contraseña general</span>
-            <input
-              type="password"
-              value={passwordAcceso}
-              onChange={(e) => {
-                setPasswordAcceso(e.target.value);
-                setErrorAcceso("");
-              }}
-              placeholder="Introduce la contraseña"
-              autoFocus
-              style={accessInputStyle}
-            />
+            <div style={passwordInputWrapStyle}>
+              <input
+                type={mostrarPasswordAcceso ? "text" : "password"}
+                value={passwordAcceso}
+                onChange={(e) => {
+                  setPasswordAcceso(e.target.value);
+                  setErrorAcceso("");
+                }}
+                placeholder="Introduce la contraseña"
+                autoFocus
+                style={passwordInputStyle}
+              />
+              <button
+                type="button"
+                onClick={() => setMostrarPasswordAcceso((prev) => !prev)}
+                style={passwordToggleStyle(mostrarPasswordAcceso)}
+              >
+                {mostrarPasswordAcceso ? "Ocultar" : "Mostrar"}
+              </button>
+            </div>
           </label>
 
           {errorAcceso && <div style={loginErrorStyle}>{errorAcceso}</div>}
@@ -1012,16 +1025,25 @@ export default function App() {
             <div style={adminInlineAccessStyle}>
               <label style={adminInlineFieldStyle}>
                 <span style={accessLabelStyle}>Contraseña de administrador</span>
-                <input
-                  type="password"
-                  value={passwordAdmin}
-                  onChange={(e) => {
-                    setPasswordAdmin(e.target.value);
-                    setErrorAdmin("");
-                  }}
-                  placeholder="Introduce la clave admin"
-                  style={accessInputStyle}
-                />
+                <div style={passwordInputWrapStyle}>
+                  <input
+                    type={mostrarPasswordAdmin ? "text" : "password"}
+                    value={passwordAdmin}
+                    onChange={(e) => {
+                      setPasswordAdmin(e.target.value);
+                      setErrorAdmin("");
+                    }}
+                    placeholder="Introduce la clave admin"
+                    style={passwordInputStyle}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setMostrarPasswordAdmin((prev) => !prev)}
+                    style={passwordToggleStyle(mostrarPasswordAdmin)}
+                  >
+                    {mostrarPasswordAdmin ? "Ocultar" : "Mostrar"}
+                  </button>
+                </div>
               </label>
 
               <button type="submit" style={accessAdminButtonStyle}>
@@ -1432,6 +1454,48 @@ const accessInputStyle = {
   outline: "none",
   boxShadow: "inset 0 1px 2px rgba(15, 23, 42, 0.04)",
 };
+
+const passwordInputWrapStyle = {
+  display: "grid",
+  gridTemplateColumns: "minmax(0, 1fr) auto",
+  alignItems: "center",
+  width: "100%",
+  boxSizing: "border-box",
+  border: "1px solid #cbd5e1",
+  borderRadius: 15,
+  minHeight: 52,
+  background: "rgba(255, 255, 255, 0.96)",
+  boxShadow: "inset 0 1px 2px rgba(15, 23, 42, 0.04)",
+  overflow: "hidden",
+};
+
+const passwordInputStyle = {
+  width: "100%",
+  minWidth: 0,
+  boxSizing: "border-box",
+  border: "none",
+  padding: "14px 14px 14px 16px",
+  minHeight: 50,
+  fontSize: 16,
+  background: "transparent",
+  color: "#0f172a",
+  outline: "none",
+};
+
+function passwordToggleStyle(active) {
+  return {
+    border: "none",
+    borderLeft: "1px solid #e2e8f0",
+    alignSelf: "stretch",
+    padding: "0 14px",
+    background: active ? "#e2e8f0" : "#f8fafc",
+    color: active ? "#1e293b" : "#475569",
+    fontSize: 13,
+    fontWeight: 700,
+    cursor: "pointer",
+    whiteSpace: "nowrap",
+  };
+}
 
 const accessPrimaryButtonStyle = {
   border: "1px solid #cbd5e1",
