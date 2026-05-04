@@ -977,6 +977,15 @@ export default function App() {
   const responsiveHoursInlineRowStyle = isMobile
     ? { ...hoursInlineRowStyle, gridTemplateColumns: "1fr" }
     : hoursInlineRowStyle;
+  const responsiveInformeTopGridStyle = isMobile
+    ? { ...informeTopGridStyle, gridTemplateColumns: "1fr", gap: 14 }
+    : informeTopGridStyle;
+  const responsiveInformeFieldWrapperStyle = isMobile
+    ? { width: "100%" }
+    : null;
+  const responsiveInformeResumenStyle = isMobile
+    ? { ...informeMensualResumenStyle, gridTemplateColumns: "1fr" }
+    : informeMensualResumenStyle;
 
   if (!accesoAutorizado) {
     return (
@@ -1254,17 +1263,17 @@ export default function App() {
 
         {tab === "informe" && (
           <>
-            <div style={informeTopGridStyle}>
+            <div style={responsiveInformeTopGridStyle}>
               <Box title="Periodo de trabajo">
                 <div style={responsivePeriodControlsStyle}>
-                  <div style={{ width: 180 }}>
+                  <div style={responsiveInformeFieldWrapperStyle || { width: 180 }}>
                     <Field label="Mes">
                       <select value={mes} onChange={(e) => setMes(e.target.value)} style={compactInputStyle}>
                         {meses.map((m) => <option key={m.value} value={m.value}>{m.label}</option>)}
                       </select>
                     </Field>
                   </div>
-                  <div style={{ width: 120 }}>
+                  <div style={responsiveInformeFieldWrapperStyle || { width: 120 }}>
                     <Field label="Año">
                       <select value={anio} onChange={(e) => setAnio(e.target.value)} style={compactInputStyle}>
                         <option value="2026">2026</option>
@@ -1277,7 +1286,7 @@ export default function App() {
               </Box>
 
               <Box title="Informe mensual">
-                <div style={informeMensualResumenStyle}>
+                <div style={responsiveInformeResumenStyle}>
                   <div style={informeMetricCardStyle}>
                     <span style={informeMetricLabelStyle}>Total km</span>
                     <strong style={informeMetricValueStyle}>{numero(totalesMes.km)} km</strong>
