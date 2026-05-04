@@ -378,6 +378,21 @@ function agruparPorProyecto(registros) {
 export default function App() {
   const hoy = new Date();
 
+  const [isMobile, setIsMobile] = useState(() => {
+    if (typeof window === "undefined") return false;
+    return window.innerWidth <= 768;
+  });
+
+  useEffect(() => {
+    function handleResize() {
+      setIsMobile(window.innerWidth <= 768);
+    }
+
+    handleResize();
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
   const [accesoAutorizado, setAccesoAutorizado] = useState(() => {
     try {
       return localStorage.getItem(ACCESS_STORAGE_KEY) === "true";
@@ -930,6 +945,39 @@ export default function App() {
     return historicoFiltrado.slice(inicio, inicio + REGISTROS_POR_PAGINA);
   }, [historicoFiltrado, paginaHistorico]);
 
+  const responsivePageStyle = isMobile ? { ...pageStyle, padding: 12 } : pageStyle;
+  const responsiveContainerStyle = isMobile ? { ...containerStyle, maxWidth: "100%" } : containerStyle;
+  const responsiveHeaderStyle = isMobile
+    ? { ...headerStyle, flexDirection: "column", alignItems: "stretch", gap: 12, marginBottom: 16 }
+    : headerStyle;
+  const responsiveHeaderActionsStyle = isMobile
+    ? { display: "flex", gap: 8, flexWrap: "wrap", justifyContent: "flex-start" }
+    : { display: "flex", gap: 10, flexWrap: "wrap", justifyContent: "flex-end" };
+  const responsiveNavStyle = isMobile
+    ? { ...navStyle, flexWrap: "nowrap", overflowX: "auto", paddingBottom: 8, WebkitOverflowScrolling: "touch" }
+    : navStyle;
+  const responsivePeriodControlsStyle = isMobile
+    ? { ...periodControlsStyle, display: "grid", gridTemplateColumns: "1fr", justifyContent: "stretch", alignItems: "stretch" }
+    : periodControlsStyle;
+  const responsiveCardsGridStyle = isMobile
+    ? { ...cardsGridStyle, gridTemplateColumns: "1fr", gap: 12 }
+    : cardsGridStyle;
+  const responsiveTwoColumnsStyle = isMobile
+    ? { ...twoColumnsStyle, gridTemplateColumns: "1fr", gap: 14 }
+    : twoColumnsStyle;
+  const responsiveRegistroTwoColumnsStyle = isMobile
+    ? { ...registroTwoColumnsStyle, gridTemplateColumns: "1fr" }
+    : registroTwoColumnsStyle;
+  const responsiveRegistroKmResumenStyle = isMobile
+    ? { ...registroKmResumenStyle, gridTemplateColumns: "1fr" }
+    : registroKmResumenStyle;
+  const responsiveHoursLayoutStyle = isMobile
+    ? { ...hoursLayoutStyle, gridTemplateColumns: "1fr" }
+    : hoursLayoutStyle;
+  const responsiveHoursInlineRowStyle = isMobile
+    ? { ...hoursInlineRowStyle, gridTemplateColumns: "1fr" }
+    : hoursInlineRowStyle;
+
   if (!accesoAutorizado) {
     return (
       <div style={loginPageStyle}>
@@ -993,7 +1041,7 @@ export default function App() {
 
           <div style={accessHeaderBlockStyle}>
             <h1 style={accessTitleStyle}>Acceso a la aplicación</h1>
-                     </div>
+          </div>
 
           <div style={employeeAccessPanelStyle}>
             <div style={panelHeaderRowStyle}>
@@ -1062,14 +1110,14 @@ export default function App() {
   }
 
   return (
-    <div style={pageStyle}>
-      <div style={containerStyle}>
-        <header style={headerStyle}>
+    <div style={responsivePageStyle}>
+      <div style={responsiveContainerStyle}>
+        <header style={responsiveHeaderStyle}>
           <div>
-            <h1 style={{ margin: "0", fontSize: 34, letterSpacing: -0.5 }}>Control de Kilometraje</h1>
+            <h1 style={{ margin: "0", fontSize: isMobile ? 28 : 34, letterSpacing: -0.5 }}>Control de Kilometraje</h1>
             <p style={{ color: "#64748b", marginTop: 6 }}>{esEmpleado ? `Vista personal de ${empleadoSesion?.nombre || "empleado"}.` : "Dashboard mensual, histórico y control acumulado por proyecto."}</p>
           </div>
-          <div style={{ display: "flex", gap: 10, flexWrap: "wrap", justifyContent: "flex-end" }}>
+          <div style={responsiveHeaderActionsStyle}>
             <button onClick={cargarDatos} disabled={cargando} onMouseEnter={() => setHoveredButton("actualizar")} onMouseLeave={() => setHoveredButton(null)} style={buttonStyle(false, "actualizar", hoveredButton)}>
               {cargando ? "Cargando..." : "Actualizar datos"}
             </button>
@@ -1079,7 +1127,7 @@ export default function App() {
           </div>
         </header>
 
-        <nav style={navStyle}>
+        <nav style={responsiveNavStyle}>
           {tabsVisibles.map((item) => (
             <button key={item.id} onClick={() => setTab(item.id)} onMouseEnter={() => setHoveredButton(item.id)} onMouseLeave={() => setHoveredButton(null)} style={buttonStyle(tab === item.id, item.id, hoveredButton)}>
               {item.label}
@@ -1091,15 +1139,15 @@ export default function App() {
 
         {(tab === "dashboard" || tab === "horas") && (
           <Box title="Periodo de trabajo">
-            <div style={periodControlsStyle}>
-              <div style={{ width: 180 }}>
+            <div style={responsivePeriodControlsStyle}>
+              <div style={isMobile ? { width: "100%" } : { width: 180 }}>
                 <Field label="Mes">
                   <select value={mes} onChange={(e) => setMes(e.target.value)} style={compactInputStyle}>
                     {meses.map((m) => <option key={m.value} value={m.value}>{m.label}</option>)}
                   </select>
                 </Field>
               </div>
-              <div style={{ width: 120 }}>
+              <div style={isMobile ? { width: "100%" } : { width: 120 }}>
                 <Field label="Año">
                   <select value={anio} onChange={(e) => setAnio(e.target.value)} style={compactInputStyle}>
                     <option value="2026">2026</option>
@@ -1114,12 +1162,12 @@ export default function App() {
 
         {tab === "dashboard" && (
           <>
-            <div style={cardsGridStyle}>
+            <div style={responsiveCardsGridStyle}>
               <Card title="Registros del mes" value={totalesMes.registros} accent="#bfdbfe" />
               <Card title="Km del mes" value={`${numero(totalesMes.km)} km`} accent="#ccfbf1" />
               <Card title="Importe del mes" value={euros(totalesMes.importe)} accent="#fed7aa" />
             </div>
-            <div style={twoColumnsStyle}>
+            <div style={responsiveTwoColumnsStyle}>
               <Box title="Resumen mensual por proyecto">
                 <Table headers={["Proyecto", "Km", "Importe", "Registros"]} rows={porProyectoMes.map((r) => [<ProjectBadge key={r.proyectoId} proyectoId={r.proyectoId} proyecto={r.proyecto} />, numero(r.km), euros(r.importe), r.registros])} />
               </Box>
@@ -1134,16 +1182,16 @@ export default function App() {
           <Box title={registroEditando ? "Editar registro de kilometraje" : "Nuevo registro de kilometraje"}>
             {registroEditando && <div style={editNoticeStyle}>Estás editando un registro existente. Al actualizar, se modificará la fila correspondiente en Google Sheets.</div>}
             <div style={registroFormGridStyle}>
-              <div style={registroTwoColumnsStyle}>
+              <div style={responsiveRegistroTwoColumnsStyle}>
                 <Field label="Fecha"><input type="date" name="fecha" value={form.fecha} onChange={handleChange} style={compactInputStyle} /></Field>
                 <Field label="Empleado"><select name="empleadoId" value={form.empleadoId} onChange={handleChange} style={compactInputStyle}><option value="">Selecciona empleado</option>{empleadosFormulario.map((e) => <option key={e.id} value={e.id}>{e.nombre}</option>)}</select></Field>
               </div>
               <Field label="Proyecto" full><select name="proyectoId" value={form.proyectoId} onChange={handleChange} style={compactInputStyle}><option value="">Selecciona proyecto</option>{proyectosApp.filter((p) => esActivo(p.activo)).map((p) => <option key={p.id} value={p.id}>{p.nombre}</option>)}</select></Field>
-              <div style={registroTwoColumnsStyle}>
+              <div style={responsiveRegistroTwoColumnsStyle}>
                 <Field label="Origen"><input name="origen" value={form.origen} onChange={handleChange} placeholder="Ej. Santa Cruz" style={compactInputStyle} /></Field>
                 <Field label="Destino"><input name="destino" value={form.destino} onChange={handleChange} placeholder="Ej. La Laguna" style={compactInputStyle} /></Field>
               </div>
-              <div style={registroKmResumenStyle}>
+              <div style={responsiveRegistroKmResumenStyle}>
                 <Field label="Km totales (ida y vuelta)"><input type="text" inputMode="decimal" name="km" value={form.km} onChange={handleChange} placeholder="Ej. 42" style={compactInputStyle} /></Field>
                 <div style={resumenCalculoStyle}><div style={{ fontSize: 12, color: "#64748B", marginBottom: 4 }}>Precio/Km</div><strong style={{ color: "#334155", fontWeight: 500 }}>{`${numero(precioKmAplicado)} €/km`}</strong></div>
                 <div style={resumenCalculoStyle}><div style={{ fontSize: 12, color: "#64748B", marginBottom: 4 }}>Importe</div><strong style={{ color: "#334155", fontWeight: 500 }}>{euros(importe)}</strong></div>
@@ -1160,17 +1208,17 @@ export default function App() {
         {tab === "horas" && (
           <>
             <Box title="Horas complementarias">
-              <div style={hoursLayoutStyle}>
+              <div style={responsiveHoursLayoutStyle}>
                 <div style={hoursFormPanelStyle}>
                   <h3 style={sectionTitleStyle}>Nuevo registro de horas</h3>
                   <p style={sectionSubtitleStyle}>Registra horas complementarias por empleado y proyecto sin mezclarlo con kilometraje.</p>
                   <div style={hoursFormGridStyle}>
-                    <div style={registroTwoColumnsStyle}>
+                    <div style={responsiveRegistroTwoColumnsStyle}>
                       <Field label="Fecha"><input type="date" name="fecha" value={formHoras.fecha} onChange={handleHorasChange} style={compactInputStyle} /></Field>
                       <Field label="Empleado"><select name="empleadoId" value={formHoras.empleadoId} onChange={handleHorasChange} style={compactInputStyle}><option value="">Selecciona empleado</option>{empleadosFormulario.map((e) => <option key={e.id} value={e.id}>{e.nombre}</option>)}</select></Field>
                     </div>
                     <Field label="Proyecto" full><select name="proyectoId" value={formHoras.proyectoId} onChange={handleHorasChange} style={compactInputStyle}><option value="">Selecciona proyecto</option>{proyectosApp.filter((p) => esActivo(p.activo)).map((p) => <option key={p.id} value={p.id}>{p.nombre}</option>)}</select></Field>
-                    <div style={hoursInlineRowStyle}>
+                    <div style={responsiveHoursInlineRowStyle}>
                       <Field label="Horas"><input type="text" inputMode="decimal" name="horas" value={formHoras.horas} onChange={handleHorasChange} placeholder="Ej. 2,5" style={compactInputStyle} /></Field>
                       <div style={resumenCalculoStyle}><div style={{ fontSize: 12, color: "#64748B", marginBottom: 4 }}>Total</div><strong style={{ color: "#334155", fontWeight: 500 }}>{numero(parseNumero(formHoras.horas, 0))} h</strong></div>
                     </div>
@@ -1208,7 +1256,7 @@ export default function App() {
           <>
             <div style={informeTopGridStyle}>
               <Box title="Periodo de trabajo">
-                <div style={periodControlsStyle}>
+                <div style={responsivePeriodControlsStyle}>
                   <div style={{ width: 180 }}>
                     <Field label="Mes">
                       <select value={mes} onChange={(e) => setMes(e.target.value)} style={compactInputStyle}>
@@ -1320,7 +1368,7 @@ function Field({ label, children, full = false }) {
 
 function Table({ headers, rows, alignments = [] }) {
   const getAlign = (index) => alignments[index] || "left";
-  return <div style={{ overflowX: "auto" }}><table style={{ width: "100%", borderCollapse: "collapse", fontSize: 14 }}><thead><tr>{headers.map((h, index) => <th key={h} style={{ ...thStyle, textAlign: getAlign(index) }}>{h}</th>)}</tr></thead><tbody>{rows.length === 0 ? <tr><td colSpan={headers.length} style={{ padding: 14, color: "#64748b", textAlign: "center" }}>No hay registros.</td></tr> : rows.map((row, i) => <tr key={i}>{row.map((cell, j) => <td key={j} style={{ ...tdStyle, textAlign: getAlign(j) }}>{cell}</td>)}</tr>)}</tbody></table></div>;
+  return <div style={{ overflowX: "auto" }}><table style={{ width: "100%", minWidth: headers.length >= 5 ? 760 : undefined, borderCollapse: "collapse", fontSize: 14 }}><thead><tr>{headers.map((h, index) => <th key={h} style={{ ...thStyle, textAlign: getAlign(index) }}>{h}</th>)}</tr></thead><tbody>{rows.length === 0 ? <tr><td colSpan={headers.length} style={{ padding: 14, color: "#64748b", textAlign: "center" }}>No hay registros.</td></tr> : rows.map((row, i) => <tr key={i}>{row.map((cell, j) => <td key={j} style={{ ...tdStyle, textAlign: getAlign(j) }}>{cell}</td>)}</tr>)}</tbody></table></div>;
 }
 
 const pageStyle = { minHeight: "100vh", background: "linear-gradient(180deg, #f8fafc 0%, #eef2ff 100%)", padding: 24, fontFamily: "Arial, sans-serif", color: "#0f172a" };
