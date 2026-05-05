@@ -968,6 +968,9 @@ export default function App() {
   const responsiveRegistroTwoColumnsStyle = isMobile
     ? { ...registroTwoColumnsStyle, gridTemplateColumns: "1fr" }
     : registroTwoColumnsStyle;
+  const responsiveOrigenDestinoStyle = isMobile
+    ? { ...origenDestinoStyle, gridTemplateColumns: "1fr" }
+    : origenDestinoStyle;
   const responsiveRegistroKmResumenStyle = isMobile
     ? { ...registroKmResumenStyle, gridTemplateColumns: "1fr" }
     : registroKmResumenStyle;
@@ -1196,7 +1199,7 @@ export default function App() {
                 <Field label="Empleado"><select name="empleadoId" value={form.empleadoId} onChange={handleChange} style={compactInputStyle}><option value="">Selecciona empleado</option>{empleadosFormulario.map((e) => <option key={e.id} value={e.id}>{e.nombre}</option>)}</select></Field>
               </div>
               <Field label="Proyecto" full><select name="proyectoId" value={form.proyectoId} onChange={handleChange} style={compactInputStyle}><option value="">Selecciona proyecto</option>{proyectosApp.filter((p) => esActivo(p.activo)).map((p) => <option key={p.id} value={p.id}>{p.nombre}</option>)}</select></Field>
-              <div style={responsiveRegistroTwoColumnsStyle}>
+              <div style={responsiveOrigenDestinoStyle}>
                 <Field label="Origen"><input name="origen" value={form.origen} onChange={handleChange} placeholder="Ej. Santa Cruz" style={compactInputStyle} /></Field>
                 <Field label="Destino"><input name="destino" value={form.destino} onChange={handleChange} placeholder="Ej. La Laguna" style={compactInputStyle} /></Field>
               </div>
@@ -1695,6 +1698,7 @@ const navStyle = { display: "flex", gap: 8, marginBottom: 20, flexWrap: "wrap" }
 const gridFiltersStyle = { display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 12, marginBottom: 16 };
 const registroFormGridStyle = { display: "grid", gridTemplateColumns: "1fr", gap: 12, maxWidth: 880, margin: "0 auto", alignItems: "start" };
 const registroTwoColumnsStyle = { display: "grid", gridTemplateColumns: "minmax(180px, 260px) minmax(260px, 1fr)", gap: 12 };
+const origenDestinoStyle = { display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: 12 };
 const registroKmResumenStyle = { display: "grid", gridTemplateColumns: "minmax(160px, 220px) minmax(150px, 1fr) minmax(150px, 1fr)", gap: 12, alignItems: "end" };
 const resumenCalculoStyle = { minHeight: 42, boxSizing: "border-box", padding: "7px 12px", background: "#F8FAFC", border: "1px solid #E2E8F0", borderRadius: 11 };
 const periodControlsStyle = { display: "flex", justifyContent: "center", alignItems: "end", gap: 16, flexWrap: "wrap", marginBottom: 4 };
